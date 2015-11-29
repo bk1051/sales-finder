@@ -2,4 +2,13 @@
 
 {% block title %}SalesFinder{% endblock title %}
 
-{% block content %}<h1>SalesFinder</h1>{% endblock content %}
+{% block content %}<h1>SalesFinder</h1>
+
+<form method="POST">
+{{ form.hidden_tag() }}
+{{ form.zipcode.label }}{{ form.zipcode() }}
+{{ form.submit() }}
+
+</form>
+
+{% endblock content %}

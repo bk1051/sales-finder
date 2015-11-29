@@ -1,9 +1,17 @@
 from flask import Flask, render_template
 from flask.ext.bootstrap import Bootstrap
 import os
+
+from flask.ext.wtf import Form
+from wtforms import StringField, SubmitField
+
+
+
 #from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy import create_engine
 #engine = create_engine('postgresql://localhost/sales_finder_dev')
+
+
 
 # Initialize app
 app = Flask(__name__)
@@ -21,6 +29,11 @@ bootstrap = Bootstrap(app)
 class InvalidZipCodeError(Exception):
     pass
 
+class ZipForm(Form):
+    zipcode = StringField("Enter ZIP Code")
+    submit = SubmitField("Find Sales")
+
+
 
 def init_db():
     pass
@@ -30,7 +43,7 @@ def connect_db():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', form=ZipForm())
 
 def validate_zipcode(zipcode):
     if "{:05d}".format(int(zipcode)) != zipcode:
