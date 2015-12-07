@@ -1,14 +1,16 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, session, url_for, redirect
 from flask.ext.bootstrap import Bootstrap
 import os
 
 from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField
 
+from flask.ext.script import Manager
 
+# from config import config
 
-#from flask.ext.sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine
+from flask.ext.sqlalchemy import SQLAlchemy
+#from sqlalchemy import create_engine
 #engine = create_engine('postgresql://localhost/sales_finder_dev')
 
 
@@ -19,11 +21,14 @@ app = Flask(__name__)
 # (production, devel, etc.)
 app.config.from_object(os.environ['APP_SETTINGS'])
 #engine = create_engine(SQLALCHEMY_DATABASE_URL)
-#db = SQLAlchemy(app)
+db = SQLAlchemy(app)
 
 # Initialize the flask-bootstrap extension.
 # This will allow us to easily use Bootstrap templates in our templates.
 bootstrap = Bootstrap(app)
+
+# Initialize the command-line manager from Flask-Script
+manager = Manager(app)
 
 
 class InvalidZipCodeError(Exception):
@@ -34,16 +39,61 @@ class ZipForm(Form):
     submit = SubmitField("Find Sales")
 
 
+# class Sale(db.Model):
+#     __tablename__ = 'sales'
+#     id = db.Column(db.Integer, primary_key = True)
+#     sale_price = db.Column(db.Integer)
 
-def init_db():
-    pass
+#     def __repr__(self):
+#         return '<Sale %r: %r>' % (self.id, self.sale_price)
 
-def connect_db():
-    return engine.connect()
+def field_cleaner(fieldname):
+    newname = fieldname.lower()
+    newname = newname.replace(" ", "_")
+    newname = newname.replace("-", "")
+    return newname
 
-@app.route('/')
+
+def rename_columns(dataframe):
+    dataframe.columns = [field_cleaner(field) for field in dataframe.columns]
+
+
+def init_db(database):
+    '''Database doesn't know about the sales_data table, so it doesn't know how to drop it!'''
+    database.drop_all()
+    import pandas as pd
+    urls = [
+        "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
+        "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
+        "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls",
+        "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
+        "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
+    ]
+    df = pd.read_excel(urls[0], skiprows=[0,1,2,3])
+    print df.head()
+    rename_columns(df)
+    df.to_sql('sales_data', database.engine)
+
+# def connect_db():
+#     return engine.connect()
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('index.html', form=ZipForm())
+    form = ZipForm()
+    # If valid form results have been POSTed, then display results
+    if form.validate_on_submit():
+        # Save the POSTed zipcode to the session, then redirect using GET
+        # This avoids the "Confirm form resubmission" popup if the
+        # user refreshes the page
+        session['zipcode'] = form.zipcode.data
+        return redirect(url_for('index'))
+
+    # If no valid POST results, either because no form data or
+    # because we've been redirected using GET after form data was saved
+    # to the session, then render the index template
+    # Note, use "session.get()" to avoid key error if no form data saved to session
+    return render_template('index.html', form=form, zipcode=session.get('zipcode'))
+
 
 def validate_zipcode(zipcode):
     if "{:05d}".format(int(zipcode)) != zipcode:
@@ -65,4 +115,4 @@ def hello_name(name):
     return "Hello, %s" % name
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    manager.run()
