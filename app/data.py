@@ -4,6 +4,7 @@ Module to manipulate and store data
 import pandas as pd
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
 
 # Borough mapping dict
 BOROUGH_MAPPING = {
@@ -116,6 +117,11 @@ def clean_data(raw_data):
     return clean
 
 
+class NoResultsException(Exception):
+    '''Exception thrown when a query has no results'''
+    pass
+
+
 class SalesData(object):
 
 
@@ -123,18 +129,56 @@ class SalesData(object):
         self.database = database
         self.query = None
 
+    def query_for_borough(self, borough):
+        self.query_borough = pd.read_sql_query("select * from sales where borough=%s" % borough, self.database.engine)
+        return self.query_borough
 
     def query_for_zip_code(self, zip_code):
         '''Query database for all rows with a certain zip code, and save in a DataFrame'''
-        self.query = pd.read_sql_query("select * from sales where zip_code=%s" % zip_code, self.database.engine)
-        return self.query
+        self.query_zip = pd.read_sql_query("select * from sales where zip_code=%s" % zip_code, self.database.engine)
+        return self.query_zip
+
+    def results_for_data(self, dataframe):
+        '''Get summary results for a dataframe'''
+        n_sales = len(dataframe)
+        med_price = np.median(dataframe.sale_price)
+        med_price_unit = np.median(dataframe.sale_price_per_res_unit)
+        med_price_sqft = np.median(dataframe.sale_price_per_sqft.dropna())
+
+        return {'Total Number of Sales': "{:,}".format(n_sales),
+                'Median Price': "${:,}".format(int(med_price)),
+                'Median Price Per Residential Unit': "${:,}".format(int(med_price_unit)),
+                'Median Price Per Sq. Foot': "${:,}".format(int(med_price_sqft))
+                }
 
     def results_for_zip_code(self, zip_code):
         '''Return dictionary of results for zip code'''
 
         zipdata = self.query_for_zip_code(zip_code)
 
-        return {'n_sales': len(zipdata)}
+
+        if len(zipdata) == 0:
+            raise NoResultsException()
+
+        # Get borough level results
+        borough = zipdata.borough.mode()[0]
+        boroughdata = self.query_for_borough(borough)
+
+        zip_results = self.results_for_data(zipdata)
+        borough_results = self.results_for_data(boroughdata)
+
+        return [{ 'name': "ZIP Code %s" % zip_code,
+                    'summary_stats': zip_results },
+                { 'name': BOROUGH_MAPPING[borough],
+                    'summary_stats': borough_results}]
+
+    def plots_for_zip_code(self, zip_code):
+        zipdata = self.query_for_zip_code(zip_code)
+
+        plot = zipdata.plot(kind='box', title=title,legend=False, rot=0, figsize=(8,5))
+
+
+        
 
 
     def load_rolling_sales_data(self):

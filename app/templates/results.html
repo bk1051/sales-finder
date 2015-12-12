@@ -8,12 +8,28 @@
 	</div>
 
 	<div class="well lg-10 center zipcode-results">
-		{% if zipcode %}
-			<h2>Results for ZIP code {{ zipcode }}</h2>
-		{% elif loading %}
-			<h2>Loading results for ZIP code {{ zipcode }}</h2>
-		{% else %}
-			<h2>Enter ZIP code to search for property sales</h2>
-		{% endif %}
+	{% if results %}
+		<table class="table table-bordered table-hover">
+			<thead>
+				<tr>
+					<th></th>
+					{% for result in results %}
+						<th>{{ result['name'] }}</th>
+					{% endfor %}
+				</tr>
+			</thead>
+			<tbody>
+				{% for key in results[0]['summary_stats'] %}
+					<tr><th>{{ key }}</th>
+						{% for result in results %}
+						<td>{{ result['summary_stats'][key] }}</td>
+						{% endfor %}
+					</tr>
+				{% endfor %}
+			</tbody>
+
+
+		<table>
+	{% endif %}
 	</div>
 {% endblock main_content %}

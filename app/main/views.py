@@ -2,11 +2,11 @@
 The main views module, defining the routes for each URL
 '''
 
-from flask import render_template, session, redirect, url_for
+from flask import render_template, session, redirect, url_for, flash
 from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField, ValidationError
 from wtforms.validators import Required
-#from ..data import SalesData
+from ..data import NoResultsException
 from .. import db, sales_data
 
 from . import main
@@ -53,8 +53,13 @@ def results():
         return redirect(url_for('main.results'))
 
     # Get the graphs
-    results = sales_data.results_for_zip_code(session.get('zip_code'))
+    try:
+        results = sales_data.results_for_zip_code(session.get('zip_code'))
 
+    except NoResultsException:
+        # If no results, flash a message to user, then redirect to index
+        flash("No results from ZIP code %s" % session.get('zip_code'))
+        return redirect(url_for('main.index'))
     # If no valid POST results, either because no form data or
     # because we've been redirected using GET after form data was saved
     # to the session, then render the index template
