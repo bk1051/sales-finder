@@ -1,4 +1,8 @@
+'''
+PACKAGE: app
 
+This package contains the code to configure and run the Flask web app.
+'''
 '''
 
 Need script to init the database
@@ -49,7 +53,7 @@ def create_app(config_name):
 	# Since we initialized bootstrap and db without attaching
 	# them to an app (i.e. an instance of the Flask object),
 	# we need to do that now, using the init_app methods
-	boostrap.init_app(app)
+	bootstrap.init_app(app)
 	db.init_app(app)
 
 	# We import the bluepring here to avoid circular depenedencies
@@ -63,33 +67,33 @@ def create_app(config_name):
 
 
 
-import os
+# import os
 
-from flask.ext.wtf import Form
-from wtforms import StringField, SubmitField
+# from flask.ext.wtf import Form
+# from wtforms import StringField, SubmitField
 
-from flask.ext.script import Manager
+# from flask.ext.script import Manager
 
-# from config import config
+# # from config import config
 
-#from sqlalchemy import create_engine
-#engine = create_engine('postgresql://localhost/sales_finder_dev')
+# #from sqlalchemy import create_engine
+# #engine = create_engine('postgresql://localhost/sales_finder_dev')
 
-from sqlalchemy.exc import ProgrammingError
-import psycopg2
+# from sqlalchemy.exc import ProgrammingError
+# import psycopg2
 
 
 
-# Initialize app
-app = Flask(__name__)
-# Use os environmental variable to determine app settings 
-# (production, devel, etc.)
-#engine = create_engine(SQLALCHEMY_DATABASE_URL)
-db = SQLAlchemy(app)
+# # Initialize app
+# app = Flask(__name__)
+# # Use os environmental variable to determine app settings 
+# # (production, devel, etc.)
+# #engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# db = SQLAlchemy(app)
 
-# Initialize the flask-bootstrap extension.
-# This will allow us to easily use Bootstrap templates in our templates.
-bootstrap = Bootstrap(app)
+# # Initialize the flask-bootstrap extension.
+# # This will allow us to easily use Bootstrap templates in our templates.
+# bootstrap = Bootstrap(app)
 
-# Initialize the command-line manager from Flask-Script
-manager = Manager(app)
+# # Initialize the command-line manager from Flask-Script
+# manager = Manager(app)
