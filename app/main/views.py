@@ -6,26 +6,28 @@ from flask import render_template, session, redirect, url_for
 from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField, ValidationError
 from wtforms.validators import Required
+#from ..data import SalesData
+from .. import db, sales_data
 
 from . import main
 
 
-def validate_zipcode(form, field):
+def validate_zip_code(form, field):
     '''Validator function for zip code input'''
-    zipcode = field.data
+    zip_code = field.data
     try:
-        zip_num = int(zipcode)
+        zip_num = int(zip_code)
     except ValueError:
         # Can't convert to int
         raise ValidationError("ZIP code must be 5 digits")
 
-    if len(zipcode) != 5 or "{:05d}".format(zip_num) != zipcode:
+    if len(zip_code) != 5 or "{:05d}".format(zip_num) != zip_code:
         raise ValidationError("ZIP code must be 5 digits long")
 
 
 class ZipForm(Form):
     '''Form object to get zip code input from user'''
-    zipcode = StringField("Enter ZIP Code", validators=[Required(), validate_zipcode])
+    zip_code = StringField("Enter ZIP Code", validators=[Required(), validate_zip_code])
     submit = SubmitField("Find Sales")
 
 @main.route('/', methods=['GET', 'POST'])
@@ -34,7 +36,7 @@ def index():
     if form.validate_on_submit():
         # If ZIP code has been posted, save zip to session dictionary
         # and redirect to the results route
-        session['zipcode'] = form.zipcode.data
+        session['zip_code'] = form.zip_code.data
         return redirect(url_for('main.results'))
 
     return render_template('index.html', form=form)
@@ -47,23 +49,26 @@ def results():
         # Save the POSTed zipcode to the session, then redirect using GET
         # This avoids the "Confirm form resubmission" popup if the
         # user refreshes the page
-        session['zipcode'] = form.zipcode.data
+        session['zip_code'] = form.zip_code.data
         return redirect(url_for('main.results'))
+
+    # Get the graphs
+    results = sales_data.results_for_zip_code(session.get('zip_code'))
 
     # If no valid POST results, either because no form data or
     # because we've been redirected using GET after form data was saved
     # to the session, then render the index template
     # Note, use "session.get()" to avoid key error if no form data saved to session
-    return render_template('results.html', form=form, zipcode=session.get('zipcode'))
+    return render_template('results.html', form=form, zip_code=session.get('zip_code'), results=results)
 
 
 
 
 @main.route('/zip/<zipcode>/')
-def zipcode_results(zipcode):
+def zipcode_results(zip_code):
     try:
-        validate_zipcode(zipcode)
+        validate_zip_code(zip_code)
         form = ZipForm()
-        return render_template('results.html', form=form, zipcode=zipcode)
+        return render_template('results.html', form=form, zipcode=zip_code)
     except InvalidZipCodeError:
         return render_template('error.html', error_description="Invalid Zip Code")

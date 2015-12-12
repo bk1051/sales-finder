@@ -119,8 +119,23 @@ def clean_data(raw_data):
 class SalesData(object):
 
 
-    def __init__(self):
-        pass
+    def __init__(self, database):
+        self.database = database
+        self.query = None
+
+
+    def query_for_zip_code(self, zip_code):
+        '''Query database for all rows with a certain zip code, and save in a DataFrame'''
+        self.query = pd.read_sql_query("select * from sales where zip_code=%s" % zip_code, self.database.engine)
+        return self.query
+
+    def results_for_zip_code(self, zip_code):
+        '''Return dictionary of results for zip code'''
+
+        zipdata = self.query_for_zip_code(zip_code)
+
+        return {'n_sales': len(zipdata)}
+
 
     def load_rolling_sales_data(self):
         '''Load the rolling sales data into a dataframe'''
@@ -129,10 +144,10 @@ class SalesData(object):
 
         urls = [
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
+                #"http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
+                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls" #,
+                #"http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
+                #"http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
             ]
 
         # Create empty list of borough dataframes
@@ -145,19 +160,24 @@ class SalesData(object):
         # Concatenate all boroughs together
         self.raw_data = pd.concat(boroughs)
         
-        print "Finished loading raw data. Cleaning data..."
+        print "Finished loading raw data ({:,} rows). Cleaning data...".format(len(self.raw_data))
         sys.stdout.flush()
 
         # Clean data and save to class instance
         self.data = clean_data(self.raw_data)
         
-        print "Done cleaning data."
+        print "Done cleaning data: {:,} rows.".format(len(self.data))
+        print self.data.borough_name.value_counts()
         sys.stdout.flush()
 
         return self.data
 
-    def create_from_scratch(self, database):
+    def create_from_scratch(self):
         '''Load data, clean, and insert into database'''
         self.load_rolling_sales_data()
 
-        
+        # Save data to SQL
+        print "Saving to database..."
+        sys.stdout.flush()
+        self.data.to_sql('sales', self.database.engine, if_exists='replace')
+        print "Done"

@@ -4,10 +4,11 @@ This is the script for launching the application
 '''
 
 import os
-from app import create_app, db
+from app import create_app, db, sales_data
 from app.models import Sale
-from app.data import SalesData
+#from app.data import SalesData
 from flask.ext.script import Manager, Shell
+from sqlalchemy.exc import ProgrammingError
 #from flask.ext.migrate import Migrate, MigrateCommand
 
 # Create an app object, either using the FLASK_CONFIG environment
@@ -63,10 +64,16 @@ def init_db():
         return
 
     print "\nInitializing database..."
-    db.drop_all()
+    try:
+        for table in db.engine.table_names():
+            db.engine.execute("DROP TABLE %s" % table)
+    except ProgrammingError:
+        print "No existing data tables"
+
+    print "Tables: %s" % db.engine.table_names()
     db.create_all()
-    salesdata = SalesData()
-    salesdata.create_from_scratch(db)
+    #salesdata = SalesData(db)
+    sales_data.create_from_scratch()
 
 
 

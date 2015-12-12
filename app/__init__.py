@@ -31,13 +31,14 @@ Generate results:
 from flask import Flask, render_template
 from flask.ext.bootstrap import Bootstrap
 from flask.ext.sqlalchemy import SQLAlchemy
-
+from data import SalesData
 
 from config import config
 
 
 bootstrap = Bootstrap()
 db = SQLAlchemy()
+sales_data = SalesData(db)
 
 def create_app(config_name):
 	# Initialize the Flask app object
