@@ -6,6 +6,10 @@ class Config(object):
     #SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/sales_finder_dev'
 
+    @staticmethod
+    def init_app(app):
+        pass
+
 class ProductionConfig(Config):
     DEBUG = False
 
@@ -22,3 +26,11 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+
+
+config = {
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'production': ProductionConfig,
+    'default': DevelopmentConfig
+}
