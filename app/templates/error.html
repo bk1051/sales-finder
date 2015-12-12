@@ -4,7 +4,9 @@
 
 {% block content %}<h1>SalesFinder</h1>
 <div>
-	<h3>ERROR</h3>
-	<h6>{{ error_description }}
+	<h3>Oops! There was an error!</h3>
+	<div></div>
+	<div>{{ request.routing_exception }}</div>
+	<h6>{{ error_description }}</h6>
 </div>
 {% endblock content %}

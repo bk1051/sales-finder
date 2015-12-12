@@ -5,6 +5,7 @@ class Config(object):
     SECRET_KEY = 'this-really-needs-to-be-changed'
     #SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/sales_finder_dev'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     @staticmethod
     def init_app(app):

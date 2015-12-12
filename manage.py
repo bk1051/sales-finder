@@ -28,6 +28,8 @@ manager.add_command("shell", Shell(make_context=make_shell_context))
 #manager.add_command('db', MigrateCommand)
 
 
+# The manager.command decorator means the test() function will be
+# available on the command line as a subcommand for manager.py
 @manager.command
 def test():
 	'''Run unit tests'''
@@ -35,6 +37,10 @@ def test():
 	# Get all the tests in the "tests" package and run them
 	tests = unittest.TestLoader().discover('tests')
 	unittest.TextTestRunner(verbosity=2).run(tests)
+
+@manager.command
+def init_db():
+	pass
 
 
 

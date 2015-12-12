@@ -1,0 +1,33 @@
+{% extends "bootstrap/base.html" %}
+
+{% block title %}SalesFinder{% endblock title %}
+
+{% block navbar %}
+<div class="navbar" role="navigation">
+	<div class="container">
+		<div class="navbar-header">
+			<a class="navbar-brand" href="/">SalesFinder</a>
+		</div>
+		<div class="navbar-right">
+			<ul class="nav navbar-nav">
+				<li><a href="/about">About SalesFinder</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+{% endblock navbar %}
+
+{% block content %}
+<div class="container">
+	{# This will display any flashed messages (error messages, etc.) at the top of the page #}
+	{% for message in get_flashed_messages() %}
+    <div class="alert alert-warning">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{ message }}
+    </div>
+    {% endfor %}
+
+	{% block main_content %}{# Main Content goes here! #}{% endblock main_content %}
+
+</div>
+{% endblock content %}

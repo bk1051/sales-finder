@@ -1,11 +1,6 @@
-{% extends "bootstrap/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}SalesFinder{% endblock title %}
-
-{% block content %}
-<div class="well lg-10 center">
-	<h1>SalesFinder</h1>
-
+{% block main_content %}
 	<div class="well lg-10 center form-container">
 		{# Use the WTForms template provided to easily render the form object #}
 		{% import "bootstrap/wtf.html" as wtf %}
@@ -21,5 +16,4 @@
 			<h2>Enter ZIP code to search for property sales</h2>
 		{% endif %}
 	</div>
-</div>
-{% endblock content %}
+{% endblock main_content %}
