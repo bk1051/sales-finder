@@ -13,6 +13,8 @@ from flask.ext.sqlalchemy import SQLAlchemy
 #from sqlalchemy import create_engine
 #engine = create_engine('postgresql://localhost/sales_finder_dev')
 
+from sqlalchemy.exc import ProgrammingError
+import psycopg2
 
 
 # Initialize app
@@ -58,9 +60,20 @@ def rename_columns(dataframe):
     dataframe.columns = [field_cleaner(field) for field in dataframe.columns]
 
 
+def get_zip_code_data(database, zip_code):
+    return pd.read_sql_query("select * from _sales_data where zip_code=%s" % zip_code, database.engine)
+
 def init_db(database):
     '''Database doesn't know about the sales_data table, so it doesn't know how to drop it!'''
-    database.drop_all()
+    #database.drop_all()
+    try:
+        database.engine.execute("DROP TABLE _sales_data")
+    except ProgrammingError:
+        print "No existing sales data table"
+    except Exception as e:
+        print type(e)
+        print e
+
     import pandas as pd
     urls = [
         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
@@ -72,7 +85,7 @@ def init_db(database):
     df = pd.read_excel(urls[0], skiprows=[0,1,2,3])
     print df.head()
     rename_columns(df)
-    df.to_sql('sales_data', database.engine)
+    df.to_sql('_sales_data', database.engine)
 
 # def connect_db():
 #     return engine.connect()
