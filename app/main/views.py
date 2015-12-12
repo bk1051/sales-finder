@@ -28,9 +28,19 @@ class ZipForm(Form):
     zipcode = StringField("Enter ZIP Code", validators=[Required(), validate_zipcode])
     submit = SubmitField("Find Sales")
 
-
 @main.route('/', methods=['GET', 'POST'])
 def index():
+    form = ZipForm()
+    if form.validate_on_submit():
+        # If ZIP code has been posted, save zip to session dictionary
+        # and redirect to the results route
+        session['zipcode'] = form.zipcode.data
+        return redirect(url_for('main.results'))
+
+    return render_template('index.html', form=form)
+
+@main.route('/results/', methods=['GET', 'POST'])
+def results():
     form = ZipForm()
     # If valid form results have been POSTed, then display results
     if form.validate_on_submit():
@@ -38,13 +48,13 @@ def index():
         # This avoids the "Confirm form resubmission" popup if the
         # user refreshes the page
         session['zipcode'] = form.zipcode.data
-        return redirect(url_for('main.index'))
+        return redirect(url_for('main.results'))
 
     # If no valid POST results, either because no form data or
     # because we've been redirected using GET after form data was saved
     # to the session, then render the index template
     # Note, use "session.get()" to avoid key error if no form data saved to session
-    return render_template('index.html', form=form, zipcode=session.get('zipcode'))
+    return render_template('results.html', form=form, zipcode=session.get('zipcode'))
 
 
 
@@ -53,6 +63,7 @@ def index():
 def zipcode_results(zipcode):
     try:
         validate_zipcode(zipcode)
-        return render_template('results.html', zipcode=zipcode)
+        form = ZipForm()
+        return render_template('results.html', form=form, zipcode=zipcode)
     except InvalidZipCodeError:
         return render_template('error.html', error_description="Invalid Zip Code")

@@ -1,19 +1,13 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-	<div class="well lg-10 center form-container">
+	<div class="well lg-10">
+		<h1>Welcome to SalesFinder!</h1>
+		<p>SalesFinder allows you to visualize residential property sales in New York City.</p>
+	</div>
+	<div class="well lg-6 center form-container">
 		{# Use the WTForms template provided to easily render the form object #}
 		{% import "bootstrap/wtf.html" as wtf %}
 		{{ wtf.quick_form(form) }}
-	</div>
-
-	<div class="well lg-10 center zipcode-results">
-		{% if zipcode %}
-			<h2>Results for ZIP code {{ zipcode }}</h2>
-		{% elif loading %}
-			<h2>Loading results for ZIP code {{ zipcode }}</h2>
-		{% else %}
-			<h2>Enter ZIP code to search for property sales</h2>
-		{% endif %}
 	</div>
 {% endblock main_content %}

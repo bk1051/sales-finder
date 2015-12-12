@@ -1,12 +1,9 @@
-{% extends "bootstrap/base.html" %}
+{% extends "base.html" %}
 
-{% block title %}SalesFinder{% endblock title %}
+{% block main_content %}
+	<h1>Oops! There was an error!</h1>
+	<h3>{{ error_description }}</h3>
+	<h4>Head on back to the main page</h4>
 
-{% block content %}<h1>SalesFinder</h1>
-<div>
-	<h3>Oops! There was an error!</h3>
-	<div></div>
-	<div>{{ request.routing_exception }}</div>
-	<h6>{{ error_description }}</h6>
 </div>
-{% endblock content %}
+{% endblock main_content %}
