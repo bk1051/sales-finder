@@ -115,25 +115,38 @@ class NoResultsException(Exception):
     '''Exception thrown when a query has no results'''
     pass
 
+class NoAppObjectError(Exception):
+    '''Exception thrown when an app object has not been set.'''
+
 
 class SalesData(object):
 
 
     def __init__(self, database, table="sales", app=None):
+        '''Constructor.
+
+        Arguments:
+            database = Required SQLAlchemy database object
+            table    = Table name to save/load sales data (defaults to 'sales')
+            app      = a Flask app instance. Can also be set after creation by calling the init_app method.
+        '''
         self.database = database
         self.table = table
-        self.app = app
-        if self.app is not None:
-            self.init_app(self.app)
+        self.init_app(app)
         self.query = None
+
+    @property
+    def app(self):
+        '''Getter for app property. Since SalesData can be created without an app object,
+        we want to make sure it is never called while still set to None. This checks that
+        it is not none when it is accessed.'''
+        if self._app is None:
+            raise NoAppObjectError("SalesData has no Flask app object. Need to specify it in constructor or call init_app.")
+        return self._app
 
     def init_app(self, app):
         '''Attach app instance to SalesData instance'''
-        self.app = app
-
-    def set_table(self, table="sales"):
-        '''Set the name of the database table to store results in'''
-        self.table = table
+        self._app = app
 
     def query_for_borough(self, borough):
         self.query_borough = pd.read_sql_query("select * from %s where borough=%s" % (self.table, borough), self.database.engine)
@@ -181,7 +194,7 @@ class SalesData(object):
     def plots_for_zip_code(self, zip_code):
         zipdata = self.query_for_zip_code(zip_code)
 
-        plot = zipdata.plot(kind='box', title="TITLE",legend=False, rot=0, figsize=(8,5))
+        plot = zipdata['building_type'].plot(kind='box', title="TITLE",legend=False, rot=0, figsize=(8,5))
         return mpld3.fig_to_html(plot.get_figure())
 
 
@@ -235,3 +248,50 @@ class SalesData(object):
         sys.stdout.flush()
         self.data.to_sql(self.table, self.database.engine, if_exists='replace')
         print "Done"
+
+
+
+
+
+
+
+def graph_count_sales(dataframe):
+    df=dataframe
+    df=df[['building_type','residential_units']]
+    df=df.groupby('building_type').sum().reset_index()
+    
+    #Sort Columns 
+    building_type= ['CONDOS', 'COOPS', 'ONE FAMILY HOMES', 'TWO FAMILY HOMES', 'THREE FAMILY HOMES']
+    mapping = {building_type: i for i, building_type in enumerate(building_type)}
+    key = df['building_type'].map(mapping)    
+    df = df.iloc[key.argsort()]
+    
+    
+    df=df.plot(kind='bar', title='Total Number of Residential Units Sold',legend=False, rot=0, figsize=(8,5), x='building_type')
+    df.set_ylabel("Units Sold", fontsize= 12)
+    df.set_xlabel("Residential Classification", fontsize= 12)
+    
+
+def graph_mean_sales(dataframe,label,title,x_title):
+    df=dataframe
+    df=df[['building_type',label]]
+    df=df.groupby('building_type').mean().reset_index()
+    
+    
+    building_type= ['CONDOS', 'COOPS', 'ONE FAMILY HOMES', 'TWO FAMILY HOMES', 'THREE FAMILY HOMES']
+    mapping = {building_type: i for i, building_type in enumerate(building_type)}
+    key = df['building_type'].map(mapping)    
+    df = df.iloc[key.argsort()]
+    
+    
+    df=df.plot(kind='barh', title=title,legend=False, rot=0, figsize=(8,5), x='building_type')
+    df.set_ylabel('Residential Classfication', fontsize= 12)
+    df.set_xlabel(x_title, fontsize= 12)
+    
+def graph_box(dataframe,label,title,x_title,y_title):
+    df=dataframe
+    df=df[['building_type',label]]
+    #df = df.unstack("building_type")
+    df=df.plot(kind='box', title=title,legend=False, rot=0, figsize=(8,5))
+    df.set_ylabel(y_title, fontsize= 12)
+    df.set_xlabel(x_title, fontsize= 12)
