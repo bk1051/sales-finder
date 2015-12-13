@@ -4,6 +4,7 @@ Module to do basic testing for the Flask web app.
 import unittest
 from flask import current_app, url_for
 from app import create_app, db, sales_data
+import app.data as data
 #from app.main import views
 import manage
 import pprint
@@ -40,11 +41,19 @@ class DataTestCase(unittest.TestCase):
 		#manage.drop_table()
 		self.app_context.pop()
 
-		
 
 	def test_testing_table(self):
 		self.assertEqual('sales_test', sales_data.table)
 
+	def test_results_for_zip_code(self):
+		results = sales_data.results_for_zip_code('10460')
+		correct = [{'summary_stats': {'Total Number of Sales': '103', 'Median Price Per Sq. Foot': '$157', 'Median Price': '$460,000', 'Median Price Per Residential Unit': '$152,333'}, 'name': 'ZIP Code 10460'}, {'summary_stats': {'Total Number of Sales': '3,107', 'Median Price Per Sq. Foot': '$179', 'Median Price': '$415,000', 'Median Price Per Residential Unit': '$196,500'}, 'name': 'The Bronx'}]
+		self.assertEqual(results, correct)
+
+	def test_no_results_raises(self):
+		with self.assertRaises(data.NoResultsException):
+			sales_data.results_for_zip_code('00000')
+		
 	def test_results_redirect(self):
 		'''Test that POSTing to results redirects correctly'''
 		response = self.client.post(url_for('main.results'), data={'zip_code':'10460'}, follow_redirects=False)

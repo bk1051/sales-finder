@@ -65,8 +65,9 @@ def create_app(config_name):
 	# the blueprint to the app here.
 	app.register_blueprint(main_blueprint)
 
-	# Attach app to sales_data object
-	sales_data.init_app(app)
+	# Now that we have an app object and a config, we can set
+	# the limited_data boolean on the sales_data object
+	sales_data.limited_data = app.config['LIMITED_DATA']
 	# Set testing to use different table
 	if app.config['TESTING']:
 		sales_data.table = 'sales_test'

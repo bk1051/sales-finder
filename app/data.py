@@ -4,10 +4,7 @@ Module to manipulate and store data
 import pandas as pd
 import numpy as np
 import sys
-import matplotlib
-matplotlib.use('SVG')
-#import matplotlib.pyplot as plt
-import mpld3
+from plots import Plotter
 
 # Borough mapping dict
 BOROUGH_MAPPING = {
@@ -122,7 +119,7 @@ class NoAppObjectError(Exception):
 class SalesData(object):
 
 
-    def __init__(self, database, table="sales", app=None):
+    def __init__(self, database, table="sales", limited_data=False):
         '''Constructor.
 
         Arguments:
@@ -132,21 +129,22 @@ class SalesData(object):
         '''
         self.database = database
         self.table = table
-        self.init_app(app)
+        self.limited_data = limited_data
+        #self.init_app(app)
         self.query = None
 
-    @property
-    def app(self):
-        '''Getter for app property. Since SalesData can be created without an app object,
-        we want to make sure it is never called while still set to None. This checks that
-        it is not none when it is accessed.'''
-        if self._app is None:
-            raise NoAppObjectError("SalesData has no Flask app object. Need to specify it in constructor or call init_app.")
-        return self._app
+    # @property
+    # def app(self):
+    #     '''Getter for app property. Since SalesData can be created without an app object,
+    #     we want to make sure it is never called while still set to None. This checks that
+    #     it is not none when it is accessed.'''
+    #     if self._app is None:
+    #         raise NoAppObjectError("SalesData has no Flask app object. Need to specify it in constructor or call init_app.")
+    #     return self._app
 
-    def init_app(self, app):
-        '''Attach app instance to SalesData instance'''
-        self._app = app
+    # def init_app(self, app):
+    #     '''Attach app instance to SalesData instance'''
+    #     self._app = app
 
     def query_for_borough(self, borough):
         self.query_borough = pd.read_sql_query("select * from %s where borough=%s" % (self.table, borough), self.database.engine)
@@ -194,8 +192,10 @@ class SalesData(object):
     def plots_for_zip_code(self, zip_code):
         zipdata = self.query_for_zip_code(zip_code)
 
-        plot = zipdata['building_type'].plot(kind='box', title="TITLE",legend=False, rot=0, figsize=(8,5))
-        return mpld3.fig_to_html(plot.get_figure())
+        plotter = Plotter(zipdata)
+        #plot = zipdata['building_type'].plot(kind='box', title="TITLE",legend=False, rot=0, figsize=(8,5))
+        #return mpld3.fig_to_html(plot.get_figure())
+        return plotter.all_plots()
 
 
         
@@ -213,7 +213,8 @@ class SalesData(object):
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
             ]
-        if self.app.config['LIMITED_DATA']:
+        #if self.app.config['LIMITED_DATA']:
+        if self.limited_data:
             # Use only Bronx, the smallest file
             urls = [urls[1]]
 
@@ -254,44 +255,3 @@ class SalesData(object):
 
 
 
-
-def graph_count_sales(dataframe):
-    df=dataframe
-    df=df[['building_type','residential_units']]
-    df=df.groupby('building_type').sum().reset_index()
-    
-    #Sort Columns 
-    building_type= ['CONDOS', 'COOPS', 'ONE FAMILY HOMES', 'TWO FAMILY HOMES', 'THREE FAMILY HOMES']
-    mapping = {building_type: i for i, building_type in enumerate(building_type)}
-    key = df['building_type'].map(mapping)    
-    df = df.iloc[key.argsort()]
-    
-    
-    df=df.plot(kind='bar', title='Total Number of Residential Units Sold',legend=False, rot=0, figsize=(8,5), x='building_type')
-    df.set_ylabel("Units Sold", fontsize= 12)
-    df.set_xlabel("Residential Classification", fontsize= 12)
-    
-
-def graph_mean_sales(dataframe,label,title,x_title):
-    df=dataframe
-    df=df[['building_type',label]]
-    df=df.groupby('building_type').mean().reset_index()
-    
-    
-    building_type= ['CONDOS', 'COOPS', 'ONE FAMILY HOMES', 'TWO FAMILY HOMES', 'THREE FAMILY HOMES']
-    mapping = {building_type: i for i, building_type in enumerate(building_type)}
-    key = df['building_type'].map(mapping)    
-    df = df.iloc[key.argsort()]
-    
-    
-    df=df.plot(kind='barh', title=title,legend=False, rot=0, figsize=(8,5), x='building_type')
-    df.set_ylabel('Residential Classfication', fontsize= 12)
-    df.set_xlabel(x_title, fontsize= 12)
-    
-def graph_box(dataframe,label,title,x_title,y_title):
-    df=dataframe
-    df=df[['building_type',label]]
-    #df = df.unstack("building_type")
-    df=df.plot(kind='box', title=title,legend=False, rot=0, figsize=(8,5))
-    df.set_ylabel(y_title, fontsize= 12)
-    df.set_xlabel(x_title, fontsize= 12)
