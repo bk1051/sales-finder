@@ -64,10 +64,10 @@ def results():
         flash("No results from ZIP code %s" % session.get('zip_code'), category='warning')
         return redirect(url_for('main.index'))
     except SQLAlchemyError as e:
-        flash("Could not load results for ZIP code <em>%s</em>! <p>Database error<pre>%s</pre></p>" % [
-                    escape_html(str(session.get('zip_code'))), 
-                    escape_html(str(e))
-                ], category = 'error')
+        flash("Could not load results for ZIP code %s! Database error: %s" % (
+                    session.get('zip_code'), 
+                    e
+                ), category = 'error')
         return redirect(url_for('main.index'))
     # If no valid POST results, either because no form data or
     # because we've been redirected using GET after form data was saved
