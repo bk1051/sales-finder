@@ -37,18 +37,6 @@ def rename_columns(dataframe):
     dataframe.columns = [field_cleaner(field) for field in dataframe.columns]
 
 
-def create_borough_column(borough):
-    if borough == 1:
-        return 'MANHATTAN'
-    if borough == 2:
-        return 'BRONX'
-    if borough == 3:
-        return 'BROOKLYN'
-    if borough == 4:
-        return 'QUEENS'
-    if borough == 5:
-        return 'STATEN ISLAND'
-
 def building_class_to_type(build_id):
     '''Create property type from building class ID codes'''
     single_family = ['01']
@@ -126,23 +114,29 @@ class NoResultsException(Exception):
 class SalesData(object):
 
 
-    def __init__(self, database, app=None):
+    def __init__(self, database, table="sales", app=None):
         self.database = database
+        self.table = table
         self.app = app
         if self.app is not None:
             self.init_app(self.app)
         self.query = None
 
     def init_app(self, app):
+        '''Attach app instance to SalesData instance'''
         self.app = app
 
+    def set_table(self, table="sales"):
+        '''Set the name of the database table to store results in'''
+        self.table = table
+
     def query_for_borough(self, borough):
-        self.query_borough = pd.read_sql_query("select * from sales where borough=%s" % borough, self.database.engine)
+        self.query_borough = pd.read_sql_query("select * from %s where borough=%s" % (self.table, borough), self.database.engine)
         return self.query_borough
 
     def query_for_zip_code(self, zip_code):
         '''Query database for all rows with a certain zip code, and save in a DataFrame'''
-        self.query_zip = pd.read_sql_query("select * from sales where zip_code=%s" % zip_code, self.database.engine)
+        self.query_zip = pd.read_sql_query("select * from %s where zip_code=%s" % (self.table, zip_code), self.database.engine)
         return self.query_zip
 
     def results_for_data(self, dataframe):
@@ -203,7 +197,7 @@ class SalesData(object):
             ]
         if self.app.config['LIMITED_DATA']:
             # Use only Bronx, the smallest file
-            urls = urls[1]
+            urls = [urls[1]]
 
         # Create empty list of borough dataframes
         boroughs = list()
@@ -232,7 +226,7 @@ class SalesData(object):
         self.load_rolling_sales_data()
 
         # Save data to SQL
-        print "Saving to database..."
+        print "Saving to database...(table=%s)" % self.table
         sys.stdout.flush()
-        self.data.to_sql('sales', self.database.engine, if_exists='replace')
+        self.data.to_sql(self.table, self.database.engine, if_exists='replace')
         print "Done"
