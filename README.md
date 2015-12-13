@@ -24,6 +24,14 @@ Now you'll need to install the project dependencies, using `pip` (which `virtual
 pip install -r requirements.txt
 ```
 
+Now, set up the database. The default is to use an SQLite3 database, which is stored as a file in the root directory of the repo. To initialize it (which will download data from the Department of Finance's website), type:
+
+```
+python manage.py init_db
+```
+
+When it asks if you're sure you want to replace the data in the database, type `y` (or `Y`, or `Yes`, etc.). It will take some time to download all the data and store it in the database.
+
 Once that's done, to run on your local server, just type:
 ```
 python manage.py runserver

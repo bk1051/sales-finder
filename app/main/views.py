@@ -67,7 +67,7 @@ def results():
         flash("Could not load results for ZIP code %s! Database error: %s" % (
                     session.get('zip_code'), 
                     e
-                ), category = 'error')
+                ), category = 'danger')
         return redirect(url_for('main.index'))
     # If no valid POST results, either because no form data or
     # because we've been redirected using GET after form data was saved
