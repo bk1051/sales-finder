@@ -7,6 +7,9 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/sales_finder_dev'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Flag for whether to use all data or just a subset
+    LIMITED_DATA = False
+
     @staticmethod
     def init_app(app):
         pass
@@ -27,11 +30,13 @@ class DevelopmentConfig(Config):
 
 class TestingConfig(Config):
     TESTING = True
+    LIMITED_DATA = True
 
 
 config = {
     'development': DevelopmentConfig,
     'testing': TestingConfig,
     'production': ProductionConfig,
+    'staging': StagingConfig,
     'default': DevelopmentConfig
 }

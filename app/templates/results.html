@@ -31,5 +31,14 @@
 
 		<table>
 	{% endif %}
+
+	{% if plots %}
+		{% for plot in plots %}
+			<div>{{ plot|safe }}</div>
+
+		{% endfor %}
+
+	{% endif %}
 	</div>
+	}
 {% endblock main_content %}

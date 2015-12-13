@@ -53,15 +53,19 @@ def warn_user(message):
 
 
 @manager.command
-def init_db():
+@manager.option('--noconfirm', dest='no_confirm', type=bool, default='False', 
+                help="Flag to avoid asking user for confirmation")
+def init_db(no_confirm=False):
     '''This will create the database from scratch'''
-    try:
-        if not warn_user("This will DESTROY all data in the database and replace with newly \ndownloaded data."):
-            print "Cancelled"
+
+    if not no_confirm:
+        try:
+            if not warn_user("This will DESTROY all data in the database and replace with newly \ndownloaded data."):
+                print "Cancelled"
+                return
+        except EOFError:
+            print "\nInvalid response. Aborting."
             return
-    except EOFError:
-        print "\nInvalid response. Aborting."
-        return
 
     print "\nInitializing database..."
     try:
@@ -71,7 +75,7 @@ def init_db():
         print "No existing data tables"
 
     print "Tables: %s" % db.engine.table_names()
-    db.create_all()
+    #db.create_all()
     #salesdata = SalesData(db)
     sales_data.create_from_scratch()
 

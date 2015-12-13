@@ -4,7 +4,8 @@ Module to manipulate and store data
 import pandas as pd
 import numpy as np
 import sys
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
+import mpld3
 
 # Borough mapping dict
 BOROUGH_MAPPING = {
@@ -125,9 +126,15 @@ class NoResultsException(Exception):
 class SalesData(object):
 
 
-    def __init__(self, database):
+    def __init__(self, database, app=None):
         self.database = database
+        self.app = app
+        if self.app is not None:
+            self.init_app(self.app)
         self.query = None
+
+    def init_app(self, app):
+        self.app = app
 
     def query_for_borough(self, borough):
         self.query_borough = pd.read_sql_query("select * from sales where borough=%s" % borough, self.database.engine)
@@ -175,7 +182,8 @@ class SalesData(object):
     def plots_for_zip_code(self, zip_code):
         zipdata = self.query_for_zip_code(zip_code)
 
-        plot = zipdata.plot(kind='box', title=title,legend=False, rot=0, figsize=(8,5))
+        plot = zipdata.plot(kind='box', title="TITLE",legend=False, rot=0, figsize=(8,5))
+        return mpld3.fig_to_html(plot.get_figure())
 
 
         
@@ -188,11 +196,14 @@ class SalesData(object):
 
         urls = [
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
-                #"http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls" #,
-                #"http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
-                #"http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
+                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls",
+                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
+                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
+                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
             ]
+        if self.app.config['LIMITED_DATA']:
+            # Use only Bronx, the smallest file
+            urls = urls[1]
 
         # Create empty list of borough dataframes
         boroughs = list()

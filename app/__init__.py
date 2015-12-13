@@ -38,7 +38,7 @@ from config import config
 
 bootstrap = Bootstrap()
 db = SQLAlchemy()
-sales_data = SalesData(db)
+sales_data = SalesData(database=db)
 
 def create_app(config_name):
 	# Initialize the Flask app object
@@ -64,6 +64,9 @@ def create_app(config_name):
 	# the app how to handle different URL routes. We attach
 	# the blueprint to the app here.
 	app.register_blueprint(main_blueprint)
+
+	# Attach app to sales_data object
+	sales_data.init_app(app)
 
 	return app
 
