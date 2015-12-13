@@ -29,3 +29,4 @@ Once that's done, to run on your local server, just type:
 python manage.py runserver
 ```
 
+Finally, open a web browser and go to `http://localhost:5000/`, and you should see SalesFinder running!
