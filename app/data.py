@@ -94,6 +94,9 @@ def clean_data(raw_data):
 
     # Create a borough name field
     clean['borough_name'] = clean['borough'].map(BOROUGH_MAPPING)
+
+    # Clean apartment number
+    clean['apartment_number'] = clean['apartment_number'].astype(str)
     #clean['borough_name'] = clean['borough'].apply(create_borough_column)
     #clean['boro'] = pd.Categorical.from_codes(clean.borough, BOROUGH_MAPPING)
 

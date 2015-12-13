@@ -8,7 +8,7 @@ from app import create_app, db, sales_data
 from app.models import Sale
 #from app.data import SalesData
 from flask.ext.script import Manager, Shell, prompt_bool
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import SQLAlchemyError
 #from flask.ext.migrate import Migrate, MigrateCommand
 
 # Create an app object, either using the FLASK_CONFIG environment
@@ -22,7 +22,7 @@ manager = Manager(app)
 #migrate = Migrate(app, db)
 
 def make_shell_context():
-    return dict(app=app, db=db, Sale=Sale)
+    return dict(app=app, db=db, sales_data=sales_data)
 
 # Add the shell command to the manager, so we can launch a shell
 # with the objects already created in the form of a context
@@ -69,8 +69,8 @@ def init_db(no_confirm=False, drop_all_tables=False):
     for table in drop_tables:
         try:
             db.engine.execute("DROP TABLE %s" % table)
-        except ProgrammingError:
-            print "Table %s does not exist" % table
+        except SQLAlchemyError as e:
+            print "Table %s does not exist\n%s" % (table, e)
 
     #db.create_all()
     #salesdata = SalesData(db)

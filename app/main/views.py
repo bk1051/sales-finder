@@ -7,7 +7,7 @@ from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField, ValidationError
 from wtforms.validators import DataRequired
 from ..data import NoResultsException
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import SQLAlchemyError
 from .. import db, sales_data
 
 from . import main
@@ -62,8 +62,8 @@ def results():
         # If no results, flash a message to user, then redirect to index
         flash("No results from ZIP code %s" % session.get('zip_code'))
         return redirect(url_for('main.index'))
-    except ProgrammingError:
-        flash("Could not load results for ZIP code %s" % session.get('zip_code'))
+    except SQLAlchemyError as e:
+        flash("Could not load results for ZIP code <em>%s</em>! <p>Database error<pre>%s</pre></p>" % (session.get('zip_code'), e))
         return redirect(url_for('main.index'))
     # If no valid POST results, either because no form data or
     # because we've been redirected using GET after form data was saved
