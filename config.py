@@ -1,6 +1,7 @@
 class Config(object):
     DEBUG = False
     TESTING = False
+    WTF_CSRF_ENABLED = True
     CSRF_ENABLED = True
     SECRET_KEY = 'this-really-needs-to-be-changed'
     #SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
@@ -31,6 +32,9 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     TESTING = True
     LIMITED_DATA = True
+
+    WTF_CSRF_ENABLED = False
+    #SQLALCHEMY_DATABASE_URI = 'postgresql://localhost/sales_finder_test'
 
 
 config = {

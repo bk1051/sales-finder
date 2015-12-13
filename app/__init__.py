@@ -67,6 +67,9 @@ def create_app(config_name):
 
 	# Attach app to sales_data object
 	sales_data.init_app(app)
+	# Set testing to use different table
+	if app.config['TESTING']:
+		sales_data.set_table('sales_test')
 
 	return app
 

@@ -7,7 +7,7 @@ import os
 from app import create_app, db, sales_data
 from app.models import Sale
 #from app.data import SalesData
-from flask.ext.script import Manager, Shell
+from flask.ext.script import Manager, Shell, prompt_bool
 from sqlalchemy.exc import ProgrammingError
 #from flask.ext.migrate import Migrate, MigrateCommand
 
@@ -41,42 +41,41 @@ def test():
     unittest.TextTestRunner(verbosity=2).run(tests)
 
 
-def warn_user(message):
-    '''Warn user about database overwriting'''
-    if message is not None:
-        print message
-    answer = raw_input("Are you sure you want to do this? [y/n] ")
-    while answer.lower()[0] not in ('y', 'n'):
-        answer = raw_input("Please enter y or n. ")
-
-    return answer.lower()[0] == 'y'
-
-
 @manager.command
 @manager.option('--noconfirm', dest='no_confirm', type=bool, default='False', 
                 help="Flag to avoid asking user for confirmation")
-def init_db(no_confirm=False):
+@manager.option('--drop-all', dest='drop_all_tables', type=bool, default='False',
+                help="Flag to drop all tables in the database. Default to drop only table set based on config.")
+def init_db(no_confirm=False, drop_all_tables=False):
     '''This will create the database from scratch'''
 
+    # Unless the no_confirm parameter is true, prompt user for a response, converted to a boolean.
+    # If the response is negative (false), cancel the operation and return. Otherwise, keeep going.
     if not no_confirm:
         try:
-            if not warn_user("This will DESTROY all data in the database and replace with newly \ndownloaded data."):
+            if not prompt_bool("This will DESTROY all data in database and download new data. Are you sure"):
                 print "Cancelled"
                 return
         except EOFError:
             print "\nInvalid response. Aborting."
             return
 
-    print "\nInitializing database..."
-    try:
-        for table in db.engine.table_names():
-            db.engine.execute("DROP TABLE %s" % table)
-    except ProgrammingError:
-        print "No existing data tables"
+    if drop_all_tables:
+        drop_tables = db.engine.table_names()
+    else:
+        drop_tables = [sales_data.table]
 
-    print "Tables: %s" % db.engine.table_names()
+    print "Dropping tables: %s" % drop_tables
+    for table in drop_tables:
+        try:
+            db.engine.execute("DROP TABLE %s" % table)
+        except ProgrammingError:
+            print "Table %s does not exist" % table
+
     #db.create_all()
     #salesdata = SalesData(db)
+
+    print "\nInitializing database..."
     sales_data.create_from_scratch()
 
 
