@@ -65,8 +65,8 @@ def results():
         return redirect(url_for('main.index'))
     except SQLAlchemyError as e:
         flash("Could not load results for ZIP code <em>%s</em>! <p>Database error<pre>%s</pre></p>" % [
-                    escape_html(session.get('zip_code')), 
-                    escape_html(e)
+                    escape_html(str(session.get('zip_code'))), 
+                    escape_html(str(e))
                 ], category = 'error')
         return redirect(url_for('main.index'))
     # If no valid POST results, either because no form data or
