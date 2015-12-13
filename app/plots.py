@@ -2,7 +2,7 @@
 
 import matplotlib
 matplotlib.use('SVG')
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import mpld3
 
 
@@ -10,11 +10,24 @@ class Plotter(object):
 
 	def __init__(self, data):
 		self.data = data
+		self.figure, self.axes = plt.subplots(nrows=2, ncols=3, figsize=(15,9))
+		self.figure.subplots_adjust(wspace=.5, hspace=.5, left=.05, right=.85)
+		print self.axes
 
 	def all_plots(self):
+		hist = self.axes[0,0].hist(self.data['sale_price_per_res_unit'])
 
-		plot = self.data[['building_type', 'sale_price']].plot(kind='box', title="TITLE")
-		return mpld3.fig_to_html(plot.get_figure())
+		type_counts = self.data.groupby('building_type').residential_units.sum()
+		#self.axes[0, 2].bar(range(len(type_counts.building_type)), type_counts.residential_units)
+		type_counts.plot(kind='bar', ax=self.axes[0,2])
+
+		self.axes[0,2].set_title('Number of Residential Units Sold by Building Type')
+		self.axes[0,2].set_xlabel("Building Type")
+		self.axes[0,2].set_ylabel("Residential Units")
+
+		plot = self.data[['building_type', 'log_sale_price']].plot(
+					kind='box', title="TITLE", by='building_type', ax=self.axes[0,1])
+		return mpld3.fig_to_html(self.figure)
 
 
 def graph_count_sales(dataframe):
