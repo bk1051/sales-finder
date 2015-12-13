@@ -9,6 +9,7 @@ from wtforms.validators import DataRequired
 from ..data import NoResultsException
 from sqlalchemy.exc import SQLAlchemyError
 from .. import db, sales_data
+from cgi import escape as escape_html
 
 from . import main
 
@@ -60,10 +61,13 @@ def results():
 
     except NoResultsException:
         # If no results, flash a message to user, then redirect to index
-        flash("No results from ZIP code %s" % session.get('zip_code'))
+        flash("No results from ZIP code %s" % session.get('zip_code'), category='warning')
         return redirect(url_for('main.index'))
     except SQLAlchemyError as e:
-        flash("Could not load results for ZIP code <em>%s</em>! <p>Database error<pre>%s</pre></p>" % (session.get('zip_code'), e))
+        flash("Could not load results for ZIP code <em>%s</em>! <p>Database error<pre>%s</pre></p>" % [
+                    escape_html(session.get('zip_code')), 
+                    escape_html(e)
+                ], category = 'error')
         return redirect(url_for('main.index'))
     # If no valid POST results, either because no form data or
     # because we've been redirected using GET after form data was saved
