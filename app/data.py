@@ -227,7 +227,7 @@ class SalesData(object):
                     'summary_stats': zip_results },
                 { 'name': BOROUGH_MAPPING[borough],
                     'summary_stats': borough_results},
-                { 'name': neighborhood,
+                { 'name': neighborhood.title(),
                     'summary_stats': neighborhood_results},
                 { 'name': "New York City",
                     'summary_stats': city_results}]

@@ -10,21 +10,49 @@ class Plotter(object):
 
 	def __init__(self, data):
 		self.data = data
-		#self.figure, self.axes = plt.subplots(nrows=2, ncols=3, figsize=(15,9))
-		#self.figure.subplots_adjust(wspace=.5, hspace=.5, left=.05, right=.85)
+		self.figure, self.axes = plt.subplots(nrows=2, ncols=3, figsize=(15,9))
+		self.figure.subplots_adjust(wspace=.5, hspace=.5, left=.05, right=.85)
 		#print self.axes
 
 	def all_plots(self):
-		self.data.loc[self.data.year==2015, 'sale_price_per_res_unit'].hist()
-		plt.title("Distribution of Sale Price Per Unit")
 
-		yearly_count = self.data.groupby('year').residential_units.sum().reset_index()
-		yearly_count.plot(kind='bar', x='year')
+		self.axes[0,0].set_title("Distribution of Sale Price Per Unit")
+		#
+		counts, bins, patches = self.axes[0,0].hist(
+			self.data.loc[self.data.year==2015, 'sale_price_per_res_unit'].tolist()
+		)
+		self.axes[0,0].set_xticklabels(bins, rotation=45)
+		self.axes[0,0].set_visible(False)
+		# self.axes[0,0].hist(
+		# 	self.data.loc[self.data.year==2015, 'sale_price_per_res_unit'].tolist()
+		# )
+
+		self.axes[0,0].set_xlabel("TEST")
+
+		#self.axes[0,0].set_xticklabels(self.axes[0,0].get_xticklabels(), rotation=90)
+		plt.sca(self.axes[0,0])
+		#locs, labels = plt.xticks()
+		#self.axes[0,0].set_xticklabels(labels, rotation=45)
+		#print locs, labels
+		plt.xlabel("Sale Price")
+		plt.ylabel("Number of Sales")
+
+		yearly_count = self.data.groupby('year').residential_units.sum()
+		print yearly_count
+		yearly_count.plot(kind='bar', x='year', ax=self.axes[1,0])
+		plt.sca(self.axes[1,0])
+		labels = self.axes[1,0].get_xticklabels()
+		for label in labels:
+			print label
+			label.set_rotation('vertical')
+		locs, labels = plt.xticks()
+		print locs, labels
+		plt.xticks(locs, yearly_count.index)
 		plt.xlabel("Year")
 		plt.ylabel("Residential Units Sold")
 
-		self.figure = plt.gcf()
-		self.figure.set_size_inches(15, 6)
+		#self.figure = plt.gcf()
+		#self.figure.set_size_inches(15, 6)
 		# hist = self.axes[0,0].hist(self.data['sale_price_per_res_unit'])
 
 		# type_counts = self.data.groupby('building_type').residential_units.sum()
