@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 import sys
 from plots import Plotter
+from urllib2 import HTTPError
+import numbers
 
 # Borough mapping dict
 BOROUGH_MAPPING = {
@@ -25,7 +27,7 @@ BUILDING_CLASS_MAPPING = {
 def field_cleaner(fieldname):
     '''Take a field (column name), convert to lowercase, strip out hyphens,
         and replace spaces with underscores. Return result.'''
-    newname = fieldname.lower()
+    newname = fieldname.strip().lower()
     newname = newname.replace(" ", "_")
     newname = newname.replace("-", "")
     return newname
@@ -68,6 +70,8 @@ def clean_data(raw_data):
     # First, rename columns
     rename_columns(raw_data)
 
+    print raw_data.columns
+
     # Restrict to data with non-trivial sale prices and residential units
     # Return a copy of subset raw_data, to avoid SettingWithCopyWarning
     clean = raw_data[(raw_data.sale_price >= 100) & (raw_data.residential_units > 0)].copy()
@@ -94,6 +98,8 @@ def clean_data(raw_data):
 
     # Clean apartment number
     clean['apartment_number'] = clean['apartment_number'].astype(str)
+
+    clean['year'] = clean['sale_date'].apply(lambda d: d.year)
     #clean['borough_name'] = clean['borough'].apply(create_borough_column)
     #clean['boro'] = pd.Categorical.from_codes(clean.borough, BOROUGH_MAPPING)
 
@@ -131,7 +137,7 @@ class SalesData(object):
         self.table = table
         self.limited_data = limited_data
         #self.init_app(app)
-        self.query = None
+        #self.query = None
 
     # @property
     # def app(self):
@@ -146,6 +152,27 @@ class SalesData(object):
     #     '''Attach app instance to SalesData instance'''
     #     self._app = app
 
+
+    def query(self, conditions=None):
+        where = ''
+        if conditions is not None:
+            condition_strings = list()
+            for key, value in conditions.items():
+                # Check type to see whether to surround in quotes or not
+                if isinstance(value, numbers.Number):
+                    condition_strings.append("%s = %s" % (key, value))
+                else:
+                    condition_strings.append("%s = '%s'" % (key, value))
+            where = 'where %s' % " and ".join(condition_strings)
+        return pd.read_sql_query("select * from %s %s" % (self.table, where), self.database.engine)
+
+    # def query(self, field=None, value=None):
+    #     '''Run a query on the database, and return result in DataFrame'''
+    #     if field is None or value is None: # Return whole database
+    #         return pd.read_sql_query("select * from %s" % self.table, self.database.engine)
+    #     else:
+    #         return pd.read_sql_query("select * from %s where %s=%s" % (self.table, field, value), self.database.engine)
+
     def query_for_borough(self, borough):
         self.query_borough = pd.read_sql_query("select * from %s where borough=%s" % (self.table, borough), self.database.engine)
         return self.query_borough
@@ -154,6 +181,7 @@ class SalesData(object):
         '''Query database for all rows with a certain zip code, and save in a DataFrame'''
         self.query_zip = pd.read_sql_query("select * from %s where zip_code=%s" % (self.table, zip_code), self.database.engine)
         return self.query_zip
+
 
     def results_for_data(self, dataframe):
         '''Get summary results for a dataframe'''
@@ -171,7 +199,8 @@ class SalesData(object):
     def results_for_zip_code(self, zip_code):
         '''Return dictionary of results for zip code'''
 
-        zipdata = self.query_for_zip_code(zip_code)
+        #zipdata = self.query(field='zip_code', value=zip_code)
+        zipdata = self.query({'zip_code': zip_code, 'year': 2015})
 
 
         if len(zipdata) == 0:
@@ -179,15 +208,29 @@ class SalesData(object):
 
         # Get borough level results
         borough = zipdata.borough.mode()[0]
-        boroughdata = self.query_for_borough(borough)
+        boroughdata = self.query({'borough': borough, 'year': 2015})
+
+        # Get neighborhood level results
+        neighborhood = zipdata.neighborhood.mode()[0]
+        #neighborhooddata = self.query(field='neighborhood', value=neighborhood)
+        neighborhooddata = self.query({'neighborhood': neighborhood, 'year': 2015})
+
+        # Get citywide results
+        citydata = self.query({'year': 2015})
 
         zip_results = self.results_for_data(zipdata)
         borough_results = self.results_for_data(boroughdata)
+        neighborhood_results = self.results_for_data(neighborhooddata)
+        city_results = self.results_for_data(citydata)
 
         return [{ 'name': "ZIP Code %s" % zip_code,
                     'summary_stats': zip_results },
                 { 'name': BOROUGH_MAPPING[borough],
-                    'summary_stats': borough_results}]
+                    'summary_stats': borough_results},
+                { 'name': neighborhood,
+                    'summary_stats': neighborhood_results},
+                { 'name': "New York City",
+                    'summary_stats': city_results}]
 
     def plots_for_zip_code(self, zip_code):
         zipdata = self.query_for_zip_code(zip_code)
@@ -198,41 +241,71 @@ class SalesData(object):
         return plotter.all_plots()
 
 
-        
-
-
-    def load_rolling_sales_data(self):
-        '''Load the rolling sales data into a dataframe'''
-        print "Loading rolling sales data..."
-        sys.stdout.flush()
-
-        urls = [
+    def file_urls(self):
+        '''Get list of URLs for files to download'''
+        urls = list()
+        for year in range(2011, 2015):
+            for boro in ['bronx', 'brooklyn', 'manhattan', 'queens', 'statenisland']:
+                urls.append(
+                    "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/annualized-sales/{year}/{year}_{boro}.xls".format(
+                            year=year, boro=boro
+                        )
+                    )
+        rolling_urls = [
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls",
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
                 "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
             ]
+        urls.extend(rolling_urls)
+        return urls
+
+
+    def load_sales_data(self):
+        '''Load the sales data into a dataframe'''
+        print "Loading sales data..."
+        sys.stdout.flush()
+
+        # Get list of URLs; if limited_data is set to true, then only download one file.
+        # Otherwise, go through and load each one as a dataframe
+        urls = self.file_urls()
+        # urls = [
+        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
+        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls",
+        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
+        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
+        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
+        #     ]
         #if self.app.config['LIMITED_DATA']:
         if self.limited_data:
             # Use only Bronx, the smallest file
-            urls = [urls[1]]
+            urls = [urls[0], urls[5]]
 
         # Create empty list of borough dataframes
-        boroughs = list()
+        datasets = list()
         for url in urls:
-            print "Loading %s" % url.split('/')[-1]
+            print "Loading %s" % url.split('/')[-1],
             sys.stdout.flush()
-            boroughs.append(pd.read_excel(url, skiprows=[0,1,2,3]))
+            try:
+                dset = pd.read_excel(url, skiprows=[0,1,2,3])
+                datasets.append(dset)
+                print "{:,} rows".format(len(dset))
+            except HTTPError:
+                print "COULDN'T DOWNLOAD %s" % url
 
-        # Concatenate all boroughs together
-        self.raw_data = pd.concat(boroughs)
-        
-        print "Finished loading raw data ({:,} rows). Cleaning data...".format(len(self.raw_data))
+        print "Finished loading data. Cleaning data..."
         sys.stdout.flush()
 
-        # Clean data and save to class instance
-        self.data = clean_data(self.raw_data)
+        # Concatenate all boroughs together
+        cleaned = list()
+        for dataset in datasets:
+            #print dataset.columns
+            #print dataset.describe().T
+            cleaned.append(clean_data(dataset))
+
+        self.data = pd.concat(cleaned)
+        
         
         print "Done cleaning data: {:,} rows.".format(len(self.data))
         print self.data.borough_name.value_counts()
@@ -242,7 +315,7 @@ class SalesData(object):
 
     def create_from_scratch(self):
         '''Load data, clean, and insert into database'''
-        self.load_rolling_sales_data()
+        self.load_sales_data()
 
         # Save data to SQL
         print "Saving to database...(table=%s)" % self.table
