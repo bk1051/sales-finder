@@ -10,23 +10,33 @@ class Plotter(object):
 
 	def __init__(self, data):
 		self.data = data
-		self.figure, self.axes = plt.subplots(nrows=2, ncols=3, figsize=(15,9))
-		self.figure.subplots_adjust(wspace=.5, hspace=.5, left=.05, right=.85)
-		print self.axes
+		#self.figure, self.axes = plt.subplots(nrows=2, ncols=3, figsize=(15,9))
+		#self.figure.subplots_adjust(wspace=.5, hspace=.5, left=.05, right=.85)
+		#print self.axes
 
 	def all_plots(self):
-		hist = self.axes[0,0].hist(self.data['sale_price_per_res_unit'])
+		self.data.loc[self.data.year==2015, 'sale_price_per_res_unit'].hist()
+		plt.title("Distribution of Sale Price Per Unit")
 
-		type_counts = self.data.groupby('building_type').residential_units.sum()
-		#self.axes[0, 2].bar(range(len(type_counts.building_type)), type_counts.residential_units)
-		type_counts.plot(kind='bar', ax=self.axes[0,2])
+		yearly_count = self.data.groupby('year').residential_units.sum().reset_index()
+		yearly_count.plot(kind='bar', x='year')
+		plt.xlabel("Year")
+		plt.ylabel("Residential Units Sold")
 
-		self.axes[0,2].set_title('Number of Residential Units Sold by Building Type')
-		self.axes[0,2].set_xlabel("Building Type")
-		self.axes[0,2].set_ylabel("Residential Units")
+		self.figure = plt.gcf()
+		self.figure.set_size_inches(15, 6)
+		# hist = self.axes[0,0].hist(self.data['sale_price_per_res_unit'])
 
-		plot = self.data[['building_type', 'log_sale_price']].plot(
-					kind='box', title="TITLE", by='building_type', ax=self.axes[0,1])
+		# type_counts = self.data.groupby('building_type').residential_units.sum()
+		# #self.axes[0, 2].bar(range(len(type_counts.building_type)), type_counts.residential_units)
+		# type_counts.plot(kind='bar', ax=self.axes[0,2])
+
+		# self.axes[0,2].set_title('Number of Residential Units Sold by Building Type')
+		# self.axes[0,2].set_xlabel("Building Type")
+		# self.axes[0,2].set_ylabel("Residential Units")
+
+		# plot = self.data[['building_type', 'log_sale_price']].plot(
+		# 			kind='box', title="TITLE", by='building_type', ax=self.axes[0,1])
 		return mpld3.fig_to_html(self.figure)
 
 
