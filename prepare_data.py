@@ -121,13 +121,15 @@ def get_clean_data(raw_data):
 
 
 def query_by_zipcode(data,zipcode):
-    valid_zipcodes=pd.unique(data['zip_code'].ravel())
-    if zipcode in valid_zipcodes:
+    try:
         data=data[data.zip_code == zipcode]
-        return data
-    else:
-        print 'No Data on zipcode %s exists' %zipcode
-
+        if data.empty:
+            print 'There Is No Data On Zipcode %s' %zipcode
+        else:
+            return data
+    
+    except TypeError:
+        print 'Invalid Input. Please Enter A Value In Non-String Format'
 
 
 
