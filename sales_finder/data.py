@@ -7,6 +7,7 @@ import sys
 from plots import Plotter
 from urllib2 import HTTPError
 import numbers
+from sqlalchemy.exc import SQLAlchemyError
 
 # Borough mapping dict
 BOROUGH_MAPPING = {
@@ -103,6 +104,41 @@ def clean_data(raw_data):
     return clean
 
 
+def results_for_data(dataframe):
+    '''Get summary results for a dataframe'''
+    n_sales = len(dataframe)
+    med_price = np.median(dataframe.sale_price)
+    med_price_unit = np.median(dataframe.sale_price_per_res_unit)
+    med_price_sqft = np.median(dataframe.sale_price_per_sqft.dropna())
+
+    return {'Total Number of Sales': "{:,}".format(n_sales),
+            'Median Price': "${:,}".format(int(med_price)),
+            'Median Price Per Residential Unit': "${:,}".format(int(med_price_unit)),
+            'Median Price Per Sq. Foot': "${:,}".format(int(med_price_sqft))
+           }
+
+
+def file_urls():
+    '''Get list of URLs for files to download'''
+    urls = list()
+    for year in range(2011, 2015):
+        for boro in ['bronx', 'brooklyn', 'manhattan', 'queens', 'statenisland']:
+            urls.append(
+                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/annualized-sales/{year}/{year}_{boro}.xls".format(
+                        year=year, boro=boro
+                    )
+                )
+    rolling_urls = [
+            "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
+            "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls",
+            "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
+            "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
+            "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
+        ]
+    urls.extend(rolling_urls)
+    return urls
+
+
 class NoResultsException(Exception):
     '''Exception thrown when a query has no results'''
     pass
@@ -112,18 +148,84 @@ class SalesData(object):
     '''Class to maintain data in database and manage queries and results.'''
 
 
-    def __init__(self, database, table="sales", limited_data=False):
+    def __init__(self, database=None, table="sales", limited_data=False):
         '''Constructor.
 
         Arguments:
             database = Required SQLAlchemy database object
             table    = Table name to save/load sales data (defaults to 'sales')
-            app      = a Flask app instance. Can also be set after creation by calling the 
+            app      = a Flask app instance. Can also be set after creation by calling the
                         init_app method.
         '''
         self.database = database
         self.table = table
         self.limited_data = limited_data
+        if self.database is not None:
+            self.data = self.query()
+
+
+    def init_db(self, database):
+        '''Attach a database to the SalesData instance'''
+        self.database = database
+        try:
+            self.data = self.query()
+        except (RuntimeError, SQLAlchemyError):
+            print "Could not query database. Make sure you've run manage.py init_db"
+
+
+    def create_from_scratch(self):
+        '''Load data, clean, and insert into database'''
+        data = self.load_sales_data()
+
+        # Save data to SQL
+        print "Saving to database...(table=%s)" % self.table
+        sys.stdout.flush()
+        data.to_sql(self.table, self.database.engine, if_exists='replace')
+        print "Done"
+
+
+    def load_sales_data(self):
+        '''Load the sales data into a dataframe'''
+        print "Loading sales data..."
+        sys.stdout.flush()
+
+        # Get list of URLs; if limited_data is set to true, then only download one file.
+        # Otherwise, go through and load each one as a dataframe
+        urls = file_urls()
+
+        if self.limited_data:
+            # Use only Bronx, the smallest file
+            urls = [urls[0], urls[-4]]
+
+        # Create empty list of dataframes. Then loop through each url and load into dataframe
+        datasets = list()
+        for url in urls:
+            print "Loading %s" % url.split('/')[-1],
+            sys.stdout.flush()
+
+            try:
+                dset = pd.read_excel(url, skiprows=[0, 1, 2, 3]) # First 4 rows are headers
+                datasets.append(dset)
+                print "{:,} rows".format(len(dset))
+
+            except HTTPError:
+                print "COULDN'T DOWNLOAD %s" % url
+
+        print "Finished loading data. Cleaning data..."
+        sys.stdout.flush()
+
+        # Concatenate all dataframes (cleaned) together
+        cleaned = list()
+        for dataset in datasets:
+            cleaned.append(clean_data(dataset))
+
+        data = pd.concat(cleaned)
+
+        print "Done cleaning data: {:,} rows.".format(len(data))
+        print data.borough_name.value_counts()
+        sys.stdout.flush()
+
+        return data
 
 
     def query(self, conditions=None):
@@ -149,33 +251,12 @@ class SalesData(object):
             where = 'where %s' % " and ".join(condition_strings)
 
         # Return the results of the query, as a pandas DataFrame
-        return pd.read_sql_query("select * from %s %s" % (self.table, where), self.database.engine)
+        try:
+            return pd.read_sql_query("select * from %s %s" % (self.table, where),
+                                     self.database.engine)
+        except SQLAlchemyError:
+            return pd.DataFrame()
 
-
-
-    def query_for_borough(self, borough):
-        '''Query Datatbase by borough and store into Dataframe'''
-        self.query_borough = pd.read_sql_query("select * from %s where borough=%s" % (self.table, borough), self.database.engine)
-        return self.query_borough
-
-    def query_for_zip_code(self, zip_code):
-        '''Query database for all rows with a certain zip code, and save in a DataFrame'''
-        self.query_zip = pd.read_sql_query("select * from %s where zip_code=%s" % (self.table, zip_code), self.database.engine)
-        return self.query_zip
-
-
-    def results_for_data(self, dataframe):
-        '''Get summary results for a dataframe'''
-        n_sales = len(dataframe)
-        med_price = np.median(dataframe.sale_price)
-        med_price_unit = np.median(dataframe.sale_price_per_res_unit)
-        med_price_sqft = np.median(dataframe.sale_price_per_sqft.dropna())
-
-        return {'Total Number of Sales': "{:,}".format(n_sales),
-                'Median Price': "${:,}".format(int(med_price)),
-                'Median Price Per Residential Unit': "${:,}".format(int(med_price_unit)),
-                'Median Price Per Sq. Foot': "${:,}".format(int(med_price_sqft))
-                }
 
     def results_for_zip_code(self, zip_code, year=2015):
         '''Return dictionary of results for zip code'''
@@ -187,20 +268,22 @@ class SalesData(object):
             raise NoResultsException()
 
         # Get borough level results
-        borough = zipdata.borough.mode()[0]
+        # ZIP codes could potentially cross both borough and neighborhood boundaries
+        # so we set the borough/neighborhood to be the mode within the query results
+        borough = zipdata['borough'].mode()[0]
         boroughdata = self.query({'borough': borough, 'year': year})
 
         # Get neighborhood level results
-        neighborhood = zipdata.neighborhood.mode()[0]
+        neighborhood = zipdata['neighborhood'].mode()[0]
         neighborhooddata = self.query({'neighborhood': neighborhood, 'year': year})
 
         # Get citywide results
         citydata = self.query({'year': year})
 
-        zip_results = self.results_for_data(zipdata)
-        borough_results = self.results_for_data(boroughdata)
-        neighborhood_results = self.results_for_data(neighborhooddata)
-        city_results = self.results_for_data(citydata)
+        zip_results = results_for_data(zipdata)
+        borough_results = results_for_data(boroughdata)
+        neighborhood_results = results_for_data(neighborhooddata)
+        city_results = results_for_data(citydata)
 
         return [{ 'name': "ZIP Code %s" % zip_code,
                     'summary_stats': zip_results },
@@ -211,12 +294,14 @@ class SalesData(object):
                 { 'name': "New York City",
                     'summary_stats': city_results}]
 
+
     def plots_for_zip_code(self, zip_code):
         ''' Return Plots by Zipcode'''
-        zipdata = self.query_for_zip_code(zip_code)
+        zipdata = self.query({ 'zip_code' : zip_code})
 
         plotter = Plotter(zipdata, "ZIP: %s" % zip_code)
         return plotter.all_plots()
+
 
     def plots_for_boroughs(self):
         ''' Return Plots by Borough'''
@@ -224,78 +309,6 @@ class SalesData(object):
         return plotter.borough_plots()
 
 
-    def file_urls(self):
-        '''Get list of URLs for files to download'''
-        urls = list()
-        for year in range(2011, 2015):
-            for boro in ['bronx', 'brooklyn', 'manhattan', 'queens', 'statenisland']:
-                urls.append(
-                    "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/annualized-sales/{year}/{year}_{boro}.xls".format(
-                            year=year, boro=boro
-                        )
-                    )
-        rolling_urls = [
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
-                "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
-            ]
-        urls.extend(rolling_urls)
-        return urls
-
-
-    def load_sales_data(self):
-        '''Load the sales data into a dataframe'''
-        print "Loading sales data..."
-        sys.stdout.flush()
-
-        # Get list of URLs; if limited_data is set to true, then only download one file.
-        # Otherwise, go through and load each one as a dataframe
-        urls = self.file_urls()
-     
-        if self.limited_data:
-            # Use only Bronx, the smallest file
-            urls = [urls[0], urls[-4]]
-
-        # Create empty list of borough dataframes
-        datasets = list()
-        for url in urls:
-            print "Loading %s" % url.split('/')[-1],
-            sys.stdout.flush()
-            try:
-                dset = pd.read_excel(url, skiprows=[0,1,2,3])
-                datasets.append(dset)
-                print "{:,} rows".format(len(dset))
-            except HTTPError:
-                print "COULDN'T DOWNLOAD %s" % url
-
-        print "Finished loading data. Cleaning data..."
-        sys.stdout.flush()
-
-        # Concatenate all boroughs together
-        cleaned = list()
-        for dataset in datasets:
-            cleaned.append(clean_data(dataset))
-
-        self.data = pd.concat(cleaned)
-        
-        
-        print "Done cleaning data: {:,} rows.".format(len(self.data))
-        print self.data.borough_name.value_counts()
-        sys.stdout.flush()
-
-        return self.data
-
-    def create_from_scratch(self):
-        '''Load data, clean, and insert into database'''
-        self.load_sales_data()
-
-        # Save data to SQL
-        print "Saving to database...(table=%s)" % self.table
-        sys.stdout.flush()
-        self.data.to_sql(self.table, self.database.engine, if_exists='replace')
-        print "Done"
 
 
 

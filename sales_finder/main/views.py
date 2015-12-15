@@ -44,6 +44,7 @@ def index():
     plots = sales_data.plots_for_boroughs()
     return render_template('index.html', form=form, plots=plots)
 
+
 @main.route('/results/', methods=['GET', 'POST'])
 def results():
     form = ZipForm()

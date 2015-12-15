@@ -23,8 +23,8 @@ class Config(object):
     SECRET_KEY = 'this-really-needs-to-be-changed'
 
     basedir = os.path.abspath(os.path.dirname(__file__))
-    SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL'] or \
-                              'sqlite:///' + os.path.join(basedir, 'data.sqlite')
+    #SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL'] or \
+    SQLALCHEMY_DATABASE_URI =                           'sqlite:///' + os.path.join(basedir, 'data.sqlite')
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False # to squelch the warning; tracking modifications is
                                            # resource intensive
