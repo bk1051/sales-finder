@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use('SVG')
 import matplotlib.pyplot as plt
 import mpld3
-
+import StringIO
 
 class Plotter(object):
 
@@ -65,7 +65,15 @@ class Plotter(object):
 
 		# plot = self.data[['building_type', 'log_sale_price']].plot(
 		# 			kind='box', title="TITLE", by='building_type', ax=self.axes[0,1])
-		return mpld3.fig_to_html(self.figure)
+
+		imgdata = StringIO.StringIO()
+		self.figure.savefig(imgdata, format='svg')
+		imgdata.seek(0)  # rewind the data
+
+		svg_dta = imgdata.buf  # this is svg data
+
+		#return mpld3.fig_to_html(self.figure)
+		return svg_dta
 
 
 def graph_count_sales(dataframe):

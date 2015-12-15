@@ -196,11 +196,11 @@ class SalesData(object):
                 'Median Price Per Sq. Foot': "${:,}".format(int(med_price_sqft))
                 }
 
-    def results_for_zip_code(self, zip_code):
+    def results_for_zip_code(self, zip_code, year=2015):
         '''Return dictionary of results for zip code'''
 
         #zipdata = self.query(field='zip_code', value=zip_code)
-        zipdata = self.query({'zip_code': zip_code, 'year': 2015})
+        zipdata = self.query({'zip_code': zip_code, 'year': year})
 
 
         if len(zipdata) == 0:
@@ -208,15 +208,15 @@ class SalesData(object):
 
         # Get borough level results
         borough = zipdata.borough.mode()[0]
-        boroughdata = self.query({'borough': borough, 'year': 2015})
+        boroughdata = self.query({'borough': borough, 'year': year})
 
         # Get neighborhood level results
         neighborhood = zipdata.neighborhood.mode()[0]
         #neighborhooddata = self.query(field='neighborhood', value=neighborhood)
-        neighborhooddata = self.query({'neighborhood': neighborhood, 'year': 2015})
+        neighborhooddata = self.query({'neighborhood': neighborhood, 'year': year})
 
         # Get citywide results
-        citydata = self.query({'year': 2015})
+        citydata = self.query({'year': year})
 
         zip_results = self.results_for_data(zipdata)
         borough_results = self.results_for_data(boroughdata)
@@ -280,7 +280,7 @@ class SalesData(object):
         #if self.app.config['LIMITED_DATA']:
         if self.limited_data:
             # Use only Bronx, the smallest file
-            urls = [urls[0], urls[5]]
+            urls = [urls[0], urls[-4]]
 
         # Create empty list of borough dataframes
         datasets = list()

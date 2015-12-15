@@ -47,7 +47,14 @@ class DataTestCase(unittest.TestCase):
 
 	def test_results_for_zip_code(self):
 		results = sales_data.results_for_zip_code('10460')
-		correct = [{'summary_stats': {'Total Number of Sales': '103', 'Median Price Per Sq. Foot': '$157', 'Median Price': '$460,000', 'Median Price Per Residential Unit': '$152,333'}, 'name': 'ZIP Code 10460'}, {'summary_stats': {'Total Number of Sales': '3,107', 'Median Price Per Sq. Foot': '$179', 'Median Price': '$415,000', 'Median Price Per Residential Unit': '$196,500'}, 'name': 'The Bronx'}]
+		correct = [{'summary_stats': {'Total Number of Sales': '95', 'Median Price Per Sq. Foot': '$157', 'Median Price': '$460,000', 'Median Price Per Residential Unit': '$150,000'}, 
+						'name': 'ZIP Code 10460'}, 
+					{'summary_stats': {'Total Number of Sales': '2,794', 'Median Price Per Sq. Foot': '$180', 'Median Price': '$415,000', 'Median Price Per Residential Unit': '$197,500'}, 
+						'name': 'The Bronx'}, 
+					{'summary_stats': {'Total Number of Sales': '221', 'Median Price Per Sq. Foot': '$162', 'Median Price': '$117,000', 'Median Price Per Residential Unit': '$111,333'}, 
+						'name': u'Parkchester              '}, 
+					{'summary_stats': {'Total Number of Sales': '2,794', 'Median Price Per Sq. Foot': '$180', 'Median Price': '$415,000', 'Median Price Per Residential Unit': '$197,500'}, 
+						'name': 'New York City'}]
 		self.assertEqual(results, correct)
 
 	def test_no_results_raises(self):
