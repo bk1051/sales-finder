@@ -33,12 +33,16 @@ class Plotter(object):
 
 		return svg_data
 
+	def init_fig(self):
+		'''Method to initialize a figure object'''
+		fig = plt.figure()
+		fig.set_size_inches(4, 4)
+		return fig
+
 	def price_per_unit_histogram(self):
 		'''Plot a histogram of price-per-unit for the zip code in 2015'''
+		fig = self.init_fig()
 		self.data.loc[self.data.year==2015, 'sale_price_per_res_unit'].hist(xrot=90)
-		fig = plt.gcf()
-		fig.set_size_inches(4, 4)
-		#fig.subplots_adjust(bottom=.25, top=.85)
 		plt.xlabel("Sale Price")
 		plt.ylabel("Sales")
 		plt.title("Distribution of Sale Price per Residential Unit\n%s" % self.label, y=1.05)
@@ -47,14 +51,26 @@ class Plotter(object):
 
 	def sales_volume_building_type_bar_chart(self):
 		'''Plot a bar chart of sales volume by building type'''
-		fig = plt.figure()
-		fig.set_size_inches(4,4)
+		fig = self.init_fig()
 		type_units = self.data.loc[self.data.year==2015].groupby('building_type').residential_units.sum()
-		plt.bar(np.arange(len(type_units)), type_units)
-		plt.xlabel("Building Type")
-		plt.ylabel("Total Units in Properties Sold")
-		plt.title("Residential Units Sold by Building Type\n%s" % self.label)
-		plt.xticks(np.arange(len(type_units)), type_units.index)
+		plt.barh(np.arange(len(type_units)), type_units)
+		plt.ylabel("Building Type")
+		plt.xlabel("Residential Units in Properties Sold")
+		plt.title("Residential Units Sold by Building Type\n%s" % self.label, x=0)
+		plt.yticks(np.arange(len(type_units)) + 0.5, type_units.index, va='top')
+		plt.tight_layout()
+		return self.fig_to_svg()
+
+	def sales_volume_year_bar_chart(self):
+		'''Plot the sales volume by year'''
+		fig = self.init_fig()
+
+		yearly_count = self.data.groupby('year').residential_units.sum()
+		plt.bar(np.arange(len(yearly_count)), yearly_count)
+		plt.xlabel("Year")
+		plt.ylabel("Residential Units in Properties Sold")
+		plt.title("Residential units Sold by Year\n%s" % self.label)
+		plt.xticks(np.arange(len(yearly_count))+0.5, yearly_count.index, ha='center')
 		plt.tight_layout()
 		return self.fig_to_svg()
 
@@ -62,7 +78,8 @@ class Plotter(object):
 
 	def all_plots(self):
 		return [self.price_per_unit_histogram(),
-				self.sales_volume_building_type_bar_chart()]
+				self.sales_volume_building_type_bar_chart(),
+				self.sales_volume_year_bar_chart()]
 
 	def old_plots(self):
 		self.axes[0,0].set_title("Distribution of Sale Price Per Unit")
