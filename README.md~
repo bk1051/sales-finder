@@ -5,7 +5,8 @@ SalesFinder is an app to explore data on residential property sales in New York 
 Before installation, we recommend setting up a __virtual environment__. There's a great guide to virtual environments here:
 http://docs.python-guide.org/en/latest/dev/virtualenvs/
 
-Please make sure you have freetype and PostgreSQL database libraries installed on your computer. Links are here: https://pypi.python.org/pypi/freetype-py/ and https://pypi.python.org/pypi/psycopg2
+Please make sure you have freetype and PostgreSQL database libraries installed on your computer. Link is
+here: https://pypi.python.org/pypi/freetype-py/ and https://pypi.python.org/pypi/psycopg2
 
 Start by `cd`ing to the directory where you want to install SalesFinder. Then type:
 ```

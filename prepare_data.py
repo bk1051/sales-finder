@@ -114,7 +114,7 @@ def get_clean_data(raw_data):
              'residential_units','sale_price','log_sale_price',
              'sale_price_per_sqft','sale_price_per_res_unit']
     clean = clean[clean.building_type != None]
-    #clean = clean[(clean.residential_units < 4) ]
+
    
     clean=clean[columns]
     return clean

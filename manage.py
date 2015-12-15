@@ -27,7 +27,7 @@ def make_shell_context():
 # Add the shell command to the manager, so we can launch a shell
 # with the objects already created in the form of a context
 manager.add_command("shell", Shell(make_context=make_shell_context))
-#manager.add_command('db', MigrateCommand)
+
 
 
 # The manager.command decorator means the test() function will be
@@ -72,8 +72,7 @@ def init_db(no_confirm=False, drop_all_tables=False):
         except SQLAlchemyError as e:
             print "Table %s does not exist\n%s" % (table, e)
 
-    #db.create_all()
-    #salesdata = SalesData(db)
+   )
 
     print "\nInitializing database..."
     sales_data.create_from_scratch()
