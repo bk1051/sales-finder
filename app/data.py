@@ -240,6 +240,10 @@ class SalesData(object):
         #return mpld3.fig_to_html(plot.get_figure())
         return plotter.all_plots()
 
+    def plots_for_boroughs(self):
+        plotter = Plotter(self.data)
+        return plotter.borough_plots()
+
 
     def file_urls(self):
         '''Get list of URLs for files to download'''

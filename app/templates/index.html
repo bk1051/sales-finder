@@ -10,4 +10,12 @@
 		{% import "bootstrap/wtf.html" as wtf %}
 		{{ wtf.quick_form(form) }}
 	</div>
+	{% if plots %}
+	<div class="well lg-10 center container">
+		<h3>Citywide Sales</h3>
+		{% for plot in plots %}
+			<div class="figure lg-4 md-6">{{ plot|safe }}</div>
+		{% endfor %}
+	</div>
+{% endif %}
 {% endblock main_content %}

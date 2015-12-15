@@ -5,8 +5,17 @@ matplotlib.use('SVG')
 import matplotlib.pyplot as plt
 import mpld3
 import cStringIO
-import seaborn as sns
 import numpy as np
+
+# Use seaborn if installed
+try:
+	import seaborn as sns
+	# Use seaborn styles to make prettier plots
+	sns.set_style('white')
+except ImportError:
+	pass
+
+
 
 class Plotter(object):
 
@@ -55,7 +64,7 @@ class Plotter(object):
 		type_units = self.data.loc[self.data.year==2015].groupby('building_type').residential_units.sum()
 		plt.barh(np.arange(len(type_units)), type_units)
 		plt.ylabel("Building Type")
-		plt.xlabel("Residential Units in Properties Sold")
+		plt.xlabel("Residential Units in Properties Sold", x=0)
 		plt.title("Residential Units Sold by Building Type\n%s" % self.label, x=0)
 		plt.yticks(np.arange(len(type_units)) + 0.5, type_units.index, va='top')
 		plt.tight_layout()
@@ -74,12 +83,25 @@ class Plotter(object):
 		plt.tight_layout()
 		return self.fig_to_svg()
 
+	def sale_price_per_sq_foot_boxplot(self, groupby):
+		fig = self.init_fig()
+		plt.boxplot(self.data.sale_price_per_sqft.dropna())
+		return self.fig_to_svg()
+
+
+
 
 
 	def all_plots(self):
 		return [self.price_per_unit_histogram(),
 				self.sales_volume_building_type_bar_chart(),
-				self.sales_volume_year_bar_chart()]
+				self.sales_volume_year_bar_chart(),
+				self.sale_price_per_sq_foot_boxplot('building_type')]
+
+	def borough_plots(self):
+		return [self.price_per_unit_histogram()
+				]
+
 
 	def old_plots(self):
 		self.axes[0,0].set_title("Distribution of Sale Price Per Unit")

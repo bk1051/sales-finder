@@ -41,7 +41,8 @@ def index():
         session['zip_code'] = form.zip_code.data
         return redirect(url_for('main.results'))
 
-    return render_template('index.html', form=form)
+    plots = sales_data.plots_for_boroughs()
+    return render_template('index.html', form=form, plots=plots)
 
 @main.route('/results/', methods=['GET', 'POST'])
 def results():
