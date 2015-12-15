@@ -1,15 +1,16 @@
 #!/usr/bin/env python
 '''
-This is the script for launching the application
+This is the script for launching the application and managing resources.
+
+For a list of available commands, type:
+python manage.py --help
 '''
 
 import os
-from app import create_app, db, sales_data
-from app.models import Sale
-#from app.data import SalesData
 from flask.ext.script import Manager, Shell, prompt_bool
 from sqlalchemy.exc import SQLAlchemyError
-#from flask.ext.migrate import Migrate, MigrateCommand
+
+from app import create_app, db, sales_data
 
 # Create an app object, either using the FLASK_CONFIG environment
 # variable, or else the default config object
