@@ -5,11 +5,16 @@ matplotlib.use('SVG')
 import matplotlib.pyplot as plt
 import mpld3
 import cStringIO
+import seaborn as sns
+import numpy as np
 
 class Plotter(object):
 
-	def __init__(self, data):
+	def __init__(self, data, label=''):
 		self.data = data
+		self.label = label
+		# Use seaborn styles to make prettier plots
+		sns.set_style('white')
 		#self.figure, self.axes = plt.subplots(nrows=2, ncols=3, figsize=(15,9))
 		#self.figure.subplots_adjust(wspace=.5, hspace=.5, left=.05, right=.85)
 		#print self.axes
@@ -26,22 +31,38 @@ class Plotter(object):
 		svg_data = io_buffer.getvalue()
 		io_buffer.close()
 
-		#io_buffer = StringIO.StringIO()
-		#figure.savefig(io_buffer, format='svg')
-		#io_buffer.seek(0) # Go back to the beginning of the stream
-		#svg_data = io_buffer.buf  # this is svg data
-
-		#return mpld3.fig_to_html(self.figure)
 		return svg_data
 
 	def price_per_unit_histogram(self):
+		'''Plot a histogram of price-per-unit for the zip code in 2015'''
 		self.data.loc[self.data.year==2015, 'sale_price_per_res_unit'].hist(xrot=90)
+		fig = plt.gcf()
+		fig.set_size_inches(4, 4)
+		#fig.subplots_adjust(bottom=.25, top=.85)
+		plt.xlabel("Sale Price")
+		plt.ylabel("Sales")
+		plt.title("Distribution of Sale Price per Residential Unit\n%s" % self.label, y=1.05)
+		plt.tight_layout()
+		return self.fig_to_svg()
+
+	def sales_volume_building_type_bar_chart(self):
+		'''Plot a bar chart of sales volume by building type'''
+		fig = plt.figure()
+		fig.set_size_inches(4,4)
+		type_units = self.data.loc[self.data.year==2015].groupby('building_type').residential_units.sum()
+		plt.bar(np.arange(len(type_units)), type_units)
+		plt.xlabel("Building Type")
+		plt.ylabel("Total Units in Properties Sold")
+		plt.title("Residential Units Sold by Building Type\n%s" % self.label)
+		plt.xticks(np.arange(len(type_units)), type_units.index)
+		plt.tight_layout()
 		return self.fig_to_svg()
 
 
 
 	def all_plots(self):
-		return [self.price_per_unit_histogram()]
+		return [self.price_per_unit_histogram(),
+				self.sales_volume_building_type_bar_chart()]
 
 	def old_plots(self):
 		self.axes[0,0].set_title("Distribution of Sale Price Per Unit")

@@ -25,9 +25,11 @@
 {% endif %}
 
 {% if plots %}
-	{% for plot in plots %}
-		<div>{{ plot|safe }}</div>
-	{% endfor %}
+	<div class="container">
+		{% for plot in plots %}
+			<div class="figure lg-4 md-6">{{ plot|safe }}</div>
+		{% endfor %}
+	</div>
 {% endif %}
 </div>
 
