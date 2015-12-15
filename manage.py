@@ -72,7 +72,7 @@ def init_db(no_confirm=False, drop_all_tables=False):
         except SQLAlchemyError as e:
             print "Table %s does not exist\n%s" % (table, e)
 
-   )
+    
 
     print "\nInitializing database..."
     sales_data.create_from_scratch()
