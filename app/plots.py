@@ -58,15 +58,16 @@ class Plotter(object):
 		plt.tight_layout()
 		return self.fig_to_svg()
 
-	def sales_volume_building_type_bar_chart(self):
-		'''Plot a bar chart of sales volume by building type'''
+	def sales_volume_bar_chart(self, groupby='building_type',
+								groupbylabel="Building Type"):
+		'''Plot a bar chart of sales volume by a groupby variable'''
 		fig = self.init_fig()
-		type_units = self.data.loc[self.data.year==2015].groupby('building_type').residential_units.sum()
-		plt.barh(np.arange(len(type_units)), type_units)
-		plt.ylabel("Building Type")
+		units = self.data.loc[self.data.year==2015].groupby(groupby).residential_units.sum()
+		plt.barh(np.arange(len(units)), units)
+		plt.ylabel(groupbylabel)
 		plt.xlabel("Residential Units in Properties Sold", x=0)
-		plt.title("Residential Units Sold by Building Type\n%s" % self.label, x=0)
-		plt.yticks(np.arange(len(type_units)) + 0.5, type_units.index, va='top')
+		plt.title("Residential Units Sold by %s\n%s" % (groupbylabel, self.label), x=0)
+		plt.yticks(np.arange(len(units)) + 0.5, units.index, va='top')
 		plt.tight_layout()
 		return self.fig_to_svg()
 
@@ -83,9 +84,30 @@ class Plotter(object):
 		plt.tight_layout()
 		return self.fig_to_svg()
 
-	def sale_price_per_sq_foot_boxplot(self, groupby):
+	def sale_price_per_sq_foot_boxplot(self, groupby, title):
+		'''Boxplot of sale price per square foot, grouped by a groupby variable'''
 		fig = self.init_fig()
-		plt.boxplot(self.data.sale_price_per_sqft.dropna())
+
+		# This figure needs to be extra wide
+		fig.set_size_inches(10, 4)
+
+		# Remove missings and restrict to the columns we need
+		data = self.data[[groupby, 'sale_price_per_sqft']].dropna()
+
+		# The boxplot function takes a list of Series, so we make one Series for each
+		# group, and append them all into a list
+		groups = list()
+		values = data[groupby].value_counts().index # All the levels of the groupby variable
+
+		for value in values:
+			groups.append(data.loc[data[groupby]==value, 'sale_price_per_sqft'])
+		
+		# Now make the plot
+		plt.boxplot(groups, 0, '')
+		plt.xticks(np.arange(len(values))+1, values)
+		plt.ylabel("Sale Price per Sq. Ft.")
+		plt.title(title)
+		plt.tight_layout()
 		return self.fig_to_svg()
 
 
@@ -94,12 +116,20 @@ class Plotter(object):
 
 	def all_plots(self):
 		return [self.price_per_unit_histogram(),
-				self.sales_volume_building_type_bar_chart(),
+				self.sales_volume_bar_chart(groupby='building_type', 
+											groupbylabel='Building Type'),
 				self.sales_volume_year_bar_chart(),
-				self.sale_price_per_sq_foot_boxplot('building_type')]
+				self.sale_price_per_sq_foot_boxplot('building_type', 
+												"Sale Price per Sq. Ft. by Building Type\n%s" % self.label)
+				]
 
 	def borough_plots(self):
-		return [self.price_per_unit_histogram()
+		return [self.price_per_unit_histogram(),
+				self.sales_volume_bar_chart(groupby='borough_name', 
+											groupbylabel='Borough'),
+				self.sales_volume_year_bar_chart(),
+				self.sale_price_per_sq_foot_boxplot('borough_name',
+							"Sale Price per Sq. Ft. by Borough\n%s" % self.label)
 				]
 
 

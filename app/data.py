@@ -235,13 +235,13 @@ class SalesData(object):
     def plots_for_zip_code(self, zip_code):
         zipdata = self.query_for_zip_code(zip_code)
 
-        plotter = Plotter(zipdata, ", ZIP: %s" % zip_code)
+        plotter = Plotter(zipdata, "ZIP: %s" % zip_code)
         #plot = zipdata['building_type'].plot(kind='box', title="TITLE",legend=False, rot=0, figsize=(8,5))
         #return mpld3.fig_to_html(plot.get_figure())
         return plotter.all_plots()
 
     def plots_for_boroughs(self):
-        plotter = Plotter(self.data)
+        plotter = Plotter(self.query())
         return plotter.borough_plots()
 
 
