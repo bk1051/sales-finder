@@ -1,3 +1,5 @@
+'''Main blueprint package. Handles routing, views, and error pages.'''
+
 from flask import Blueprint
 
 main = Blueprint('main', __name__)

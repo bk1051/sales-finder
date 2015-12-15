@@ -1,15 +1,19 @@
 '''
 The main views module, defining the routes for each URL
+
+The view function tell the server which templates to display, and how to set
+session variables, etc.
 '''
 
 from flask import render_template, session, redirect, url_for, flash
 from flask.ext.wtf import Form
 from wtforms import StringField, SubmitField, ValidationError
 from wtforms.validators import DataRequired
-from ..data import NoResultsException
+
 from sqlalchemy.exc import SQLAlchemyError
-from .. import db, sales_data
-from cgi import escape as escape_html
+
+from ..data import NoResultsException
+from .. import sales_data
 
 from . import main
 
@@ -32,8 +36,10 @@ class ZipForm(Form):
     zip_code = StringField("Enter ZIP Code", validators=[DataRequired(), validate_zip_code])
     submit = SubmitField("Find Sales")
 
+
 @main.route('/', methods=['GET', 'POST'])
 def index():
+    '''Routing function for index page. Displays citywide data'''
     form = ZipForm()
     if form.validate_on_submit():
         # If ZIP code has been posted, save zip to session dictionary
@@ -41,12 +47,14 @@ def index():
         session['zip_code'] = form.zip_code.data
         return redirect(url_for('main.results'))
 
+    # Plot data citywide, by boroughs
     plots = sales_data.plots_for_boroughs()
     return render_template('index.html', form=form, plots=plots)
 
 
 @main.route('/results/', methods=['GET', 'POST'])
 def results():
+    '''Results routing function. Displays results for a ZIP code'''
     form = ZipForm()
     # If valid form results have been POSTed, then display results
     if form.validate_on_submit():
@@ -77,14 +85,3 @@ def results():
     # Note, use "session.get()" to avoid key error if no form data saved to session
     return render_template('results.html', form=form, zip_code=session.get('zip_code'), results=results, plots=plots)
 
-
-
-
-@main.route('/zip/<zipcode>/')
-def zipcode_results(zip_code):
-    try:
-        validate_zip_code(zip_code)
-        form = ZipForm()
-        return render_template('results.html', form=form, zipcode=zip_code)
-    except InvalidZipCodeError:
-        return render_template('error.html', error_description="Invalid Zip Code")
