@@ -76,33 +76,4 @@ def create_app(config_name):
 
 
 
-# import os
 
-# from flask.ext.wtf import Form
-# from wtforms import StringField, SubmitField
-
-# from flask.ext.script import Manager
-
-# # from config import config
-
-# #from sqlalchemy import create_engine
-# #engine = create_engine('postgresql://localhost/sales_finder_dev')
-
-# from sqlalchemy.exc import ProgrammingError
-# import psycopg2
-
-
-
-# # Initialize app
-# app = Flask(__name__)
-# # Use os environmental variable to determine app settings 
-# # (production, devel, etc.)
-# #engine = create_engine(SQLALCHEMY_DATABASE_URL)
-# db = SQLAlchemy(app)
-
-# # Initialize the flask-bootstrap extension.
-# # This will allow us to easily use Bootstrap templates in our templates.
-# bootstrap = Bootstrap(app)
-
-# # Initialize the command-line manager from Flask-Script
-# manager = Manager(app)

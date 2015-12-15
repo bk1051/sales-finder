@@ -100,17 +100,7 @@ def clean_data(raw_data):
     clean['apartment_number'] = clean['apartment_number'].astype(str)
 
     clean['year'] = clean['sale_date'].apply(lambda d: d.year)
-    #clean['borough_name'] = clean['borough'].apply(create_borough_column)
-    #clean['boro'] = pd.Categorical.from_codes(clean.borough, BOROUGH_MAPPING)
 
-    #Subset Data
-    # columns=['borough_name','zip_code','neighborhood','building_type',
-    #          'residential_units','sale_price','log_sale_price',
-    #          'sale_price_per_sqft','sale_price_per_res_unit']
-    # clean = clean[clean.building_type != None]
-    # #clean = clean[(clean.residential_units < 4) ]
-   
-    # clean=clean[columns]
     return clean
 
 
@@ -136,21 +126,6 @@ class SalesData(object):
         self.database = database
         self.table = table
         self.limited_data = limited_data
-        #self.init_app(app)
-        #self.query = None
-
-    # @property
-    # def app(self):
-    #     '''Getter for app property. Since SalesData can be created without an app object,
-    #     we want to make sure it is never called while still set to None. This checks that
-    #     it is not none when it is accessed.'''
-    #     if self._app is None:
-    #         raise NoAppObjectError("SalesData has no Flask app object. Need to specify it in constructor or call init_app.")
-    #     return self._app
-
-    # def init_app(self, app):
-    #     '''Attach app instance to SalesData instance'''
-    #     self._app = app
 
 
     def query(self, conditions=None):
@@ -166,14 +141,10 @@ class SalesData(object):
             where = 'where %s' % " and ".join(condition_strings)
         return pd.read_sql_query("select * from %s %s" % (self.table, where), self.database.engine)
 
-    # def query(self, field=None, value=None):
-    #     '''Run a query on the database, and return result in DataFrame'''
-    #     if field is None or value is None: # Return whole database
-    #         return pd.read_sql_query("select * from %s" % self.table, self.database.engine)
-    #     else:
-    #         return pd.read_sql_query("select * from %s where %s=%s" % (self.table, field, value), self.database.engine)
+
 
     def query_for_borough(self, borough):
+        '''Query Datatbase by borough and store into Dataframe'''
         self.query_borough = pd.read_sql_query("select * from %s where borough=%s" % (self.table, borough), self.database.engine)
         return self.query_borough
 
@@ -199,7 +170,6 @@ class SalesData(object):
     def results_for_zip_code(self, zip_code, year=2015):
         '''Return dictionary of results for zip code'''
 
-        #zipdata = self.query(field='zip_code', value=zip_code)
         zipdata = self.query({'zip_code': zip_code, 'year': year})
 
 
@@ -212,7 +182,6 @@ class SalesData(object):
 
         # Get neighborhood level results
         neighborhood = zipdata.neighborhood.mode()[0]
-        #neighborhooddata = self.query(field='neighborhood', value=neighborhood)
         neighborhooddata = self.query({'neighborhood': neighborhood, 'year': year})
 
         # Get citywide results
@@ -233,14 +202,14 @@ class SalesData(object):
                     'summary_stats': city_results}]
 
     def plots_for_zip_code(self, zip_code):
+        ''' Return Plots by Zipcode'''
         zipdata = self.query_for_zip_code(zip_code)
 
         plotter = Plotter(zipdata, "ZIP: %s" % zip_code)
-        #plot = zipdata['building_type'].plot(kind='box', title="TITLE",legend=False, rot=0, figsize=(8,5))
-        #return mpld3.fig_to_html(plot.get_figure())
         return plotter.all_plots()
 
     def plots_for_boroughs(self):
+        ''' Return Plots by Borough'''
         plotter = Plotter(self.query())
         return plotter.borough_plots()
 
@@ -274,14 +243,7 @@ class SalesData(object):
         # Get list of URLs; if limited_data is set to true, then only download one file.
         # Otherwise, go through and load each one as a dataframe
         urls = self.file_urls()
-        # urls = [
-        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_manhattan.xls",
-        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_bronx.xls",
-        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_brooklyn.xls",
-        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_queens.xls",
-        #         "http://www1.nyc.gov/assets/finance/downloads/pdf/rolling_sales/rollingsales_statenisland.xls"
-        #     ]
-        #if self.app.config['LIMITED_DATA']:
+     
         if self.limited_data:
             # Use only Bronx, the smallest file
             urls = [urls[0], urls[-4]]
@@ -304,8 +266,6 @@ class SalesData(object):
         # Concatenate all boroughs together
         cleaned = list()
         for dataset in datasets:
-            #print dataset.columns
-            #print dataset.describe().T
             cleaned.append(clean_data(dataset))
 
         self.data = pd.concat(cleaned)
