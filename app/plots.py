@@ -4,18 +4,46 @@ import matplotlib
 matplotlib.use('SVG')
 import matplotlib.pyplot as plt
 import mpld3
-import StringIO
+import cStringIO
 
 class Plotter(object):
 
 	def __init__(self, data):
 		self.data = data
-		self.figure, self.axes = plt.subplots(nrows=2, ncols=3, figsize=(15,9))
-		self.figure.subplots_adjust(wspace=.5, hspace=.5, left=.05, right=.85)
+		#self.figure, self.axes = plt.subplots(nrows=2, ncols=3, figsize=(15,9))
+		#self.figure.subplots_adjust(wspace=.5, hspace=.5, left=.05, right=.85)
 		#print self.axes
 
-	def all_plots(self):
+	def fig_to_svg(self, figure=None):
+		'''Convert the current matplotlib figure to SVG data, to be included in a web page'''
+		if figure is None:
+			figure = plt.gcf()
 
+		# Use a StringIO stream/buffer to store the figure, rather than writing
+		# to a file on disk
+		io_buffer = cStringIO.StringIO()
+		figure.savefig(io_buffer, format='svg')
+		svg_data = io_buffer.getvalue()
+		io_buffer.close()
+
+		#io_buffer = StringIO.StringIO()
+		#figure.savefig(io_buffer, format='svg')
+		#io_buffer.seek(0) # Go back to the beginning of the stream
+		#svg_data = io_buffer.buf  # this is svg data
+
+		#return mpld3.fig_to_html(self.figure)
+		return svg_data
+
+	def price_per_unit_histogram(self):
+		self.data.loc[self.data.year==2015, 'sale_price_per_res_unit'].hist(xrot=90)
+		return self.fig_to_svg()
+
+
+
+	def all_plots(self):
+		return [self.price_per_unit_histogram()]
+
+	def old_plots(self):
 		self.axes[0,0].set_title("Distribution of Sale Price Per Unit")
 		#
 		counts, bins, patches = self.axes[0,0].hist(

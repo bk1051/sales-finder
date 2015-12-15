@@ -57,7 +57,7 @@ def results():
     # Get the graphs
     try:
         results = sales_data.results_for_zip_code(session.get('zip_code'))
-        plot = sales_data.plots_for_zip_code(session.get('zip_code'))
+        plots = sales_data.plots_for_zip_code(session.get('zip_code'))
 
     except NoResultsException:
         # If no results, flash a message to user, then redirect to index
@@ -73,7 +73,7 @@ def results():
     # because we've been redirected using GET after form data was saved
     # to the session, then render the index template
     # Note, use "session.get()" to avoid key error if no form data saved to session
-    return render_template('results.html', form=form, zip_code=session.get('zip_code'), results=results, plots=[plot])
+    return render_template('results.html', form=form, zip_code=session.get('zip_code'), results=results, plots=plots)
 
 
 
