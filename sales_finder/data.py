@@ -43,8 +43,8 @@ def building_class_to_type(build_id):
     single_family = ['01']
     two_three_family = ['02', '03']
     multifamily_rental = ['07', '08', '11A', '14']
-    coops=['09','10', '17']
-    condos=['4','12','13','15']
+    coops = ['09', '10', '17']
+    condos = ['4', '12', '13', '15']
 
     if build_id in single_family:
         return "Single-Family Homes"
@@ -70,8 +70,6 @@ def clean_data(raw_data):
     # First, rename columns
     rename_columns(raw_data)
 
-    print raw_data.columns
-
     # Restrict to data with non-trivial sale prices and residential units
     # Return a copy of subset raw_data, to avoid SettingWithCopyWarning
     clean = raw_data[(raw_data.sale_price >= 100) & (raw_data.residential_units > 0)].copy()
@@ -80,18 +78,18 @@ def clean_data(raw_data):
     clean['log_sale_price'] = np.log(clean.sale_price)
 
     clean['sale_price_per_sqft'] = clean.sale_price / clean.gross_square_feet
-    clean.loc[clean.gross_square_feet==0, 'sale_price_per_sqft'] = np.nan
+    clean.loc[clean.gross_square_feet == 0, 'sale_price_per_sqft'] = np.nan
 
     clean['sale_price_per_res_unit'] = clean.sale_price / clean.residential_units
-    
+
     # Strip whitespace for building class category, and split the numeric code from the name
-    clean['building_class_category']= clean['building_class_category'].apply(strip_whitespace)
+    clean['building_class_category'] = clean['building_class_category'].apply(strip_whitespace)
 
     partitioned = clean['building_class_category'].str.partition(' ')
-    clean[['building_class_id', 'building_class_category']] = partitioned.iloc[:, [0,2]]
+    clean[['building_class_id', 'building_class_category']] = partitioned.iloc[:, [0, 2]]
 
     # Use the building class ID to get property type
-    clean['building_type']=clean['building_class_id'].apply(building_class_to_type)
+    clean['building_type'] = clean['building_class_id'].apply(building_class_to_type)
 
     # Create a borough name field
     clean['borough_name'] = clean['borough'].map(BOROUGH_MAPPING)
@@ -99,6 +97,7 @@ def clean_data(raw_data):
     # Clean apartment number
     clean['apartment_number'] = clean['apartment_number'].astype(str)
 
+    # Extract year from sale date
     clean['year'] = clean['sale_date'].apply(lambda d: d.year)
 
     return clean
@@ -108,11 +107,9 @@ class NoResultsException(Exception):
     '''Exception thrown when a query has no results'''
     pass
 
-class NoAppObjectError(Exception):
-    '''Exception thrown when an app object has not been set.'''
-
 
 class SalesData(object):
+    '''Class to maintain data in database and manage queries and results.'''
 
 
     def __init__(self, database, table="sales", limited_data=False):
@@ -121,7 +118,8 @@ class SalesData(object):
         Arguments:
             database = Required SQLAlchemy database object
             table    = Table name to save/load sales data (defaults to 'sales')
-            app      = a Flask app instance. Can also be set after creation by calling the init_app method.
+            app      = a Flask app instance. Can also be set after creation by calling the 
+                        init_app method.
         '''
         self.database = database
         self.table = table
@@ -129,7 +127,16 @@ class SalesData(object):
 
 
     def query(self, conditions=None):
+        '''Query database with given conditions.
+
+        conditions is a dict of the form {'variable_name': value}.
+        Results returned must then satisfy: variable_name = value
+        '''
+        # Where clause starts empty
         where = ''
+
+        # If any conditions are given, loop through each key/value
+        # and build up the where clause
         if conditions is not None:
             condition_strings = list()
             for key, value in conditions.items():
@@ -138,7 +145,10 @@ class SalesData(object):
                     condition_strings.append("%s = %s" % (key, value))
                 else:
                     condition_strings.append("%s = '%s'" % (key, value))
+
             where = 'where %s' % " and ".join(condition_strings)
+
+        # Return the results of the query, as a pandas DataFrame
         return pd.read_sql_query("select * from %s %s" % (self.table, where), self.database.engine)
 
 
