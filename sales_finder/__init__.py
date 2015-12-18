@@ -15,7 +15,7 @@ writing to/reading from the database.
 The create_app function is a factory to create and return an app instance.
 
 Much of the structure for the Flask code came from:
-Miguel Grinberg. “Flask Web Development.” (O'Reilly) 
+Miguel Grinberg. "Flask Web Development." (O'Reilly) 
 '''
 from flask import Flask, render_template
 from flask.ext.bootstrap import Bootstrap
